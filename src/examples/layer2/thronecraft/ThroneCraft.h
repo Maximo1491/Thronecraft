@@ -22,11 +22,19 @@ namespace octet
 		glm::vec4 light_diffuse;
 
 		uint8_t selectedBlock;
+		glm::vec4 selectedBlockColor;
 		bool gravity;
 
 		int chunksX, chunksY, chunksZ;
 
-		unsigned int vp_vbo, vt_vbo;
+		enum{
+			current_block,
+			current_block_background,
+
+			num_elements,
+		};
+
+		ui_element ui[num_elements];
 
 		ThroneCraft(int argc, char **argv) : app(argc, argv) { }
 
@@ -39,6 +47,14 @@ namespace octet
 			//player position & gravity
 			position = glm::vec3(176, 60, 176);
 			gravity = false;
+
+			//Get window width and height for UI elements
+			int windowWidth, windowHeight;
+			get_viewport_size(windowWidth, windowHeight);
+
+			//Create the UI elements
+			ui[current_block].init(20, windowHeight - 70, 50, 50, windowWidth, windowHeight);
+			ui[current_block_background].init(10, windowHeight - 80, 70, 70, windowWidth, windowHeight);
 
 			//Number of Lights
 			numOfLights = 2;
@@ -55,44 +71,16 @@ namespace octet
 			//Light 2
 			light_information[1] = glm::vec4( -2.0f, -1.0f, -4.0f, 0.0f );
 
-			int width, height;
-			get_viewport_size(width, height);
-
-			projection = glm::perspective(45.0f, 1.0f*width/height, 0.1f, 256.0f);
+			projection = glm::perspective(45.0f, 1.0f*windowWidth/windowHeight, 0.1f, 256.0f);
 			
 			c = new superChunk();
-
-			float points[] = {
-				-0.5,  0.5,
-				-0.5, -0.5,
-				 0.5, -0.5,
-				 0.5, -0.5,
-				 0.5,  0.5,
-				-0.5,  0.5
-			};
-
-			float tex_coords[] = {
-				0.0, 1.0,
-				0.0, 0.0,
-				1.0, 0.0,
-				1.0, 0.0,
-				1.0, 1.0,
-				0.0, 1.0
-			};
-
-			glGenBuffers(1, &vp_vbo);
-			glBindBuffer(GL_ARRAY_BUFFER, vp_vbo);
-			glBufferData(GL_ARRAY_BUFFER, 2 * 6 * sizeof(float), &points, GL_STATIC_DRAW);
-
-			glGenBuffers(1, &vt_vbo);
-			glBindBuffer(GL_ARRAY_BUFFER, vt_vbo);
-			glBufferData(GL_ARRAY_BUFFER, 2 * 6 * sizeof(float), &tex_coords, GL_STATIC_DRAW);
 
 			int i = 1;
 			bool downhill = false;
 
 			//Start by selecting a grass block
 			selectedBlock = 1;
+			selectedBlockColor = glm::vec4(0.160, 0.570, 0.168, 1);
 
 			FILE* file = fopen("saveFile.tc", "r");
 
@@ -122,20 +110,6 @@ namespace octet
 							 }
 						}
 					}
-					/*if(i >= CY)
-					{
-					  i = CY - 1;
-					}
-
-					if(x > CX * 2 - 1)
-					{
-					  downhill = true;
-					}
-
-					if(!downhill)
-					  i++;
-					else
-					  i--;*/
 				}
 			}
 
@@ -442,31 +416,37 @@ namespace octet
 			{
 				set_key('1', false);
 				selectedBlock = 1;
+				selectedBlockColor = glm::vec4(0.160, 0.570, 0.168, 1);
 			}
 			if (is_key_down('2')) // dirt
 			{
 				set_key('2', false);
 				selectedBlock = 2;
+				selectedBlockColor = glm::vec4(0.6, 0.3, 0, 1);
 			}
 			if (is_key_down('3')) // stone
 			{
 				set_key('3', false);
 				selectedBlock = 3;
+				selectedBlockColor = glm::vec4(0.5, 0.5, 0.5, 1);
 			}
 			if (is_key_down('4')) // wood
 			{
 				set_key('4', false);
 				selectedBlock = 4;
+				selectedBlockColor = glm::vec4(0.4, 0.2, 0, 1);
 			}
 			if (is_key_down('5')) // bush
 			{
 				set_key('5', false);
 				selectedBlock = 5;
+				selectedBlockColor = glm::vec4(0.06, 0.25, 0.06, 1);
 			}
 			if (is_key_down('6')) // snow
 			{
 				set_key('6', false);
 				selectedBlock = 6;
+				selectedBlockColor = glm::vec4(0.75, 0.75, 0.75, 1);
 			}
 			if(is_key_down(key_backspace)){
 				gravity = !gravity;
@@ -509,17 +489,8 @@ namespace octet
 			//Draws our super chunk
 			c->render(model, view, projection, numOfLights, light_information, light_diffuse, light_ambient, color_shader_);
 
-			ui_shader_.render();
-
-			glBindBuffer(GL_ARRAY_BUFFER, vp_vbo);
-			glEnableVertexAttribArray(attribute_position);
-			glVertexAttribPointer(attribute_position, 2, GL_FLOAT, GL_FALSE, 0, 0);
-
-			glBindBuffer(GL_ARRAY_BUFFER, vt_vbo);
-			glEnableVertexAttribArray(attribute_texcoord);
-			glVertexAttribPointer(attribute_texcoord, 2, GL_FLOAT, GL_FALSE, 0, 0);
-
-			glDrawArrays(GL_TRIANGLES, 0, 6);
+			ui[current_block].render(ui_shader_, selectedBlockColor);
+			ui[current_block_background].render(ui_shader_, glm::vec4(0, 0, 0, 1));
 
 			keyboard_controls();
 			mouse_controls(width, height);

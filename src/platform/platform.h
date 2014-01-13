@@ -103,6 +103,7 @@ static char *get_sprintf_buffer() {
 #include "../math/random.h"
 #include "../../lib/glm/glm.hpp"
 #include "../../lib/glm/gtc/matrix_transform.hpp"
+#include "../../lib/glm/gtc/type_ptr.hpp"
 
 // CG, GLSL, C++ compiler
 #include "../compiler/cpp_error.h"
@@ -175,6 +176,7 @@ static char *get_sprintf_buffer() {
 #include "../scene/smooth.h"
 #include "../scene/mesh_text.h"
 #include "../scene/wireframe.h"
+#include "../scene/UI_Element.h"
 
 // high level helpers
 #include "../helpers/mouse_ball.h"

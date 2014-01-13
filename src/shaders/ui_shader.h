@@ -1,7 +1,7 @@
 namespace octet {
 	class ui_shader : public shader
 	{
-		GLuint vec2_vp, vec2_vt;
+		GLuint matrixIndex_, colorIndex_;
 
 	public:
 		void init()
@@ -9,32 +9,39 @@ namespace octet {
 			const char vertex_shader[] = SHADER_STR(
 
 				attribute vec2 position;
-				attribute vec2 texcoord;
-				uniform mat4 matrix;
-				varying vec2 st;
+			attribute vec2 texcoord;
+			uniform mat4 matrix;
+			uniform vec4 uicolor;
 
-				void main() {
-					st = texcoord;
-					gl_Position = matrix * vec4(position, 0.0, 1.0);
-				}
+			varying vec4 f_color;
+
+			void main() {
+				gl_Position = matrix * vec4(position, 0.0, 1.0);
+
+				f_color = vec4(uicolor);
+			}
 			);
 
 			const char fragment_shader[] = SHADER_STR(
 
-				void main()
-				{
-					gl_FragColor = vec4(1.0, 0.5, 0.0, 1.0);
-				}
+				varying vec4 f_color;
+
+			void main()
+			{
+				gl_FragColor = f_color;
+			}
 			);
 
 			shader::init(vertex_shader, fragment_shader);
-			/*vec2_vp = glGetUniformLocation(program(), "vp");
-			vec2_vt = glGetUniformLocation(program(), "vt");*/
+			matrixIndex_ = glGetUniformLocation(program(), "matrix");
+			colorIndex_ = glGetUniformLocation(program(), "uicolor");
 		}
 
-		void render()
+		void render(glm::mat4 &view, glm::vec4 &color = glm::vec4(1.0, 0.5, 0, 1.0))
 		{
 			shader::render();
+			glUniformMatrix4fv(matrixIndex_, 1, GL_FALSE, glm::value_ptr(view));
+			glUniform4f(colorIndex_, color.x, color.y, color.z, color.w);
 		}
 	};
 }
