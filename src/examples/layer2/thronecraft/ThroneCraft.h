@@ -7,6 +7,8 @@ namespace octet
 		color_shader color_shader_;
 		ui_shader ui_shader_;
 
+    int windowWidth, windowHeight;
+
 		superChunk* c;
 
 		glm::mat4 model;
@@ -20,16 +22,46 @@ namespace octet
 		glm::vec4 light_information[8];
 		glm::vec4 light_ambient;
 		glm::vec4 light_diffuse;
+    float light_angle;
 
 		uint8_t selectedBlock;
-		glm::vec4 selectedBlockColor;
+    float current_block_position;
 		bool gravity;
 
 		int chunksX, chunksY, chunksZ;
 
+    enum{
+      empty,
+      grass,
+      dirt,
+      stone,
+      wood,
+      leaves,
+      snow,
+      sand,
+      brick,
+
+      numTypes,
+    };
+
+    glm::vec4 blockColors[numTypes];
+
 		enum{
-			current_block,
+      ui_empty,
+			ui_grass_block,
+      ui_dirt_block,
+      ui_stone_block,
+      ui_wood_block,
+      ui_leaves_block,
+      ui_snow_block,
+      ui_sand_block,
+      ui_brick_block,
+      ui_hotbar_background,
 			current_block_background,
+      crosshair_left,
+      crosshair_right,
+      crosshair_top,
+      crosshair_bottom,
 
 			num_elements,
 		};
@@ -49,15 +81,37 @@ namespace octet
 			gravity = false;
 
 			//Get window width and height for UI elements
-			int windowWidth, windowHeight;
 			get_viewport_size(windowWidth, windowHeight);
 
+      blockColors[grass] = glm::vec4(0.160, 0.570, 0.168, 1);
+      blockColors[dirt] = glm::vec4(0.6, 0.3, 0, 1);
+      blockColors[stone] = glm::vec4(0.5, 0.5, 0.5, 1);
+      blockColors[wood] = glm::vec4(0.4, 0.2, 0, 1);
+      blockColors[leaves] = glm::vec4(0.06, 0.25, 0.06, 1);
+      blockColors[snow] = glm::vec4(0.75, 0.75, 0.75, 1);
+      blockColors[sand] = glm::vec4(0.841, 0.865, 0.353, 1);
+      blockColors[brick] = glm::vec4(0.948, 0.254, 0.254, 1);
+
+      float hotbar_width = 60 * 8 + 10;
+      current_block_position = (windowWidth*0.5f) - (hotbar_width*0.5f) + 5;
+      ui[ui_hotbar_background].init((windowWidth*0.5f) - (hotbar_width*0.5f), windowHeight - 80, hotbar_width, 70, windowWidth, windowHeight);
+      ui[current_block_background].init(current_block_position, windowHeight - 75, 60, 60, windowWidth, windowHeight);
+
 			//Create the UI elements
-			ui[current_block].init(20, windowHeight - 70, 50, 50, windowWidth, windowHeight);
-			ui[current_block_background].init(10, windowHeight - 80, 70, 70, windowWidth, windowHeight);
+      float inventoryX = ((windowWidth*0.5f) - (hotbar_width*0.5f)) + 10;
+      for(int i = ui_grass_block; i <= ui_brick_block; i++)
+      {
+			  ui[i].init(inventoryX, windowHeight - 70, 50, 50, windowWidth, windowHeight);
+        inventoryX += 60;
+      }
+
+      ui[crosshair_left].init((windowWidth*0.5f) - 6, (windowHeight*0.5f) - 2, 5, 4, windowWidth, windowHeight);
+      ui[crosshair_right].init((windowWidth*0.5f) + 1, (windowHeight*0.5f) - 2, 5, 4, windowWidth, windowHeight);
+      ui[crosshair_top].init((windowWidth*0.5f) - 2, (windowHeight*0.5f) - 6, 4, 5, windowWidth, windowHeight);
+      ui[crosshair_bottom].init((windowWidth*0.5f) - 2, (windowHeight*0.5f) + 1, 4, 5, windowWidth, windowHeight);
 
 			//Number of Lights
-			numOfLights = 2;
+			numOfLights = 1;
 			
 			//Ambient Light
 			light_ambient = glm::vec4( 0.2f, 0.2f, 0.2f, 1.0f );
@@ -68,8 +122,10 @@ namespace octet
 			//Light 1
 			light_information[0] = glm::vec4( 1.0f, 2.0f, 3.0f, 0.0f );
 
+      light_angle = 0.0f;
+
 			//Light 2
-			light_information[1] = glm::vec4( -2.0f, -1.0f, -4.0f, 0.0f );
+			//light_information[1] = glm::vec4( -2.0f, -1.0f, -4.0f, 0.0f );
 
 			projection = glm::perspective(45.0f, 1.0f*windowWidth/windowHeight, 0.1f, 256.0f);
 			
@@ -79,8 +135,7 @@ namespace octet
 			bool downhill = false;
 
 			//Start by selecting a grass block
-			selectedBlock = 1;
-			selectedBlockColor = glm::vec4(0.160, 0.570, 0.168, 1);
+			selectedBlock = grass;
 
 			FILE* file = fopen("saveFile.tc", "r");
 
@@ -415,38 +470,50 @@ namespace octet
 			if (is_key_down('1')) // grass
 			{
 				set_key('1', false);
-				selectedBlock = 1;
-				selectedBlockColor = glm::vec4(0.160, 0.570, 0.168, 1);
+        ui[current_block_background].setPos(current_block_position + ((grass-1) * 60), windowHeight - 75);
+				selectedBlock = grass;
 			}
 			if (is_key_down('2')) // dirt
 			{
 				set_key('2', false);
-				selectedBlock = 2;
-				selectedBlockColor = glm::vec4(0.6, 0.3, 0, 1);
+        ui[current_block_background].setPos(current_block_position + ((dirt-1) * 60), windowHeight - 75);
+				selectedBlock = dirt;
 			}
 			if (is_key_down('3')) // stone
 			{
 				set_key('3', false);
-				selectedBlock = 3;
-				selectedBlockColor = glm::vec4(0.5, 0.5, 0.5, 1);
+        ui[current_block_background].setPos(current_block_position + ((stone-1) * 60), windowHeight - 75);
+				selectedBlock = stone;
 			}
 			if (is_key_down('4')) // wood
 			{
 				set_key('4', false);
-				selectedBlock = 4;
-				selectedBlockColor = glm::vec4(0.4, 0.2, 0, 1);
+        ui[current_block_background].setPos(current_block_position + ((wood-1) * 60), windowHeight - 75);
+				selectedBlock = wood;
 			}
-			if (is_key_down('5')) // bush
+			if (is_key_down('5')) // leaves
 			{
 				set_key('5', false);
-				selectedBlock = 5;
-				selectedBlockColor = glm::vec4(0.06, 0.25, 0.06, 1);
+        ui[current_block_background].setPos(current_block_position + ((leaves-1) * 60), windowHeight - 75);
+				selectedBlock = leaves;
 			}
 			if (is_key_down('6')) // snow
 			{
 				set_key('6', false);
-				selectedBlock = 6;
-				selectedBlockColor = glm::vec4(0.75, 0.75, 0.75, 1);
+        ui[current_block_background].setPos(current_block_position + ((snow-1) * 60), windowHeight - 75);
+				selectedBlock = snow;
+			}
+      if (is_key_down('7')) // sand
+			{
+				set_key('7', false);
+        ui[current_block_background].setPos(current_block_position + ((sand-1) * 60), windowHeight - 75);
+				selectedBlock = sand;
+			}
+      if (is_key_down('8')) // brick
+			{
+				set_key('8', false);
+        ui[current_block_background].setPos(current_block_position + ((brick-1) * 60), windowHeight - 75);
+				selectedBlock = brick;
 			}
 			if(is_key_down(key_backspace)){
 				gravity = !gravity;
@@ -486,11 +553,19 @@ namespace octet
 				exit(1);
 			}
 
+      light_information[0] = glm::vec4(sin(light_angle * 0.0174532925f), cos(light_angle * 0.0174532925f), 0.0f, 0.0f);
+      light_angle += 1.0f;
+
 			//Draws our super chunk
 			c->render(model, view, projection, numOfLights, light_information, light_diffuse, light_ambient, color_shader_);
+      
+      for(int i = ui_grass_block; i <= ui_brick_block; i++)
+        ui[i].render(ui_shader_, blockColors[i]);
+      ui[current_block_background].render(ui_shader_, glm::vec4(1, 0, 0.6, 1));
+			ui[ui_hotbar_background].render(ui_shader_, glm::vec4(0, 0, 0, 1));
 
-			ui[current_block].render(ui_shader_, selectedBlockColor);
-			ui[current_block_background].render(ui_shader_, glm::vec4(0, 0, 0, 1));
+      for(int i = crosshair_left; i <= crosshair_bottom; i++)
+        ui[i].render(ui_shader_, glm::vec4(0,0,0,1));
 
 			keyboard_controls();
 			mouse_controls(width, height);

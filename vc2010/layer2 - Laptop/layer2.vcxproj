@@ -105,12 +105,14 @@
     <ClInclude Include="..\..\src\scene\skeleton.h" />
     <ClInclude Include="..\..\src\scene\skin.h" />
     <ClInclude Include="..\..\src\scene\smooth.h" />
+    <ClInclude Include="..\..\src\scene\UI_Element.h" />
     <ClInclude Include="..\..\src\scene\wireframe.h" />
     <ClInclude Include="..\..\src\shaders\bump_shader.h" />
     <ClInclude Include="..\..\src\shaders\color_shader.h" />
     <ClInclude Include="..\..\src\shaders\phong_shader.h" />
     <ClInclude Include="..\..\src\shaders\shader.h" />
     <ClInclude Include="..\..\src\shaders\texture_shader.h" />
+    <ClInclude Include="..\..\src\shaders\ui_shader.h" />
     <ClInclude Include="..\..\src\tinyxml\tinystr.h" />
     <ClInclude Include="..\..\src\tinyxml\tinyxml.h" />
   </ItemGroup>

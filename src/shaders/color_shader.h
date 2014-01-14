@@ -61,6 +61,16 @@ namespace octet {
 					color = vec4(0.75, 0.75, 0.75, 1);
 				}
 
+        else if (pos.w == 7.0) // sand
+				{
+					color = vec4(0.841, 0.865, 0.353, 1);
+				}
+
+        else if (pos.w == 8.0) // brick
+				{
+					color = vec4(0.948, 0.254, 0.254, 1);
+				}
+
 				else
 					color = vec4(1, 1, 1, 1);
 

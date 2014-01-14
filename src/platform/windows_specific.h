@@ -293,7 +293,7 @@ namespace octet {
             } else if (msg.message == WM_MOUSEMOVE) {
               app->set_mouse_pos(msg.lParam & 0xffff, msg.lParam >> 16);
 							app->motion(msg.lParam & 0xffff, msg.lParam >> 16, &app->window_handle);
-							//ShowCursor(false);
+							ShowCursor(false);
             } else if (msg.message == WM_MOUSEWHEEL) {
               app->set_mouse_wheel(app->get_mouse_wheel() + (int)msg.wParam);
             } else if (msg.message == WM_LBUTTONDOWN || msg.message == WM_LBUTTONUP) {

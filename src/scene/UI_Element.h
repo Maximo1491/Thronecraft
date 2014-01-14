@@ -12,7 +12,7 @@ namespace octet {
 		int texture;
 		bool enabled;
 
-		glm::mat4 matrix;
+		glm::mat4 matrix, scale, pos;
 
 	public:
 		ui_element()
@@ -30,10 +30,10 @@ namespace octet {
 			windowW = ww;
 			windowH = wh;
 
-			glm::mat4 scale = glm::scale(glm::mat4(1.0), glm::vec3(width / windowW, height / windowH, 0));
+			scale = glm::scale(glm::mat4(1.0), glm::vec3(width / windowW, height / windowH, 0));
 			float x_pos = -1.0 + ((x / (windowW*0.5f)) + (width / windowW));
 			float y_pos = 1.0 - ((y / (windowH*0.5f)) + (height / windowH));
-			glm::mat4 pos = glm::translate(glm::mat4(1.0), glm::vec3(x_pos, y_pos, 0));
+			pos = glm::translate(glm::mat4(1.0), glm::vec3(x_pos, y_pos, 0));
 
 			matrix = pos * scale;
 
@@ -63,6 +63,19 @@ namespace octet {
 			glBindBuffer(GL_ARRAY_BUFFER, vt_vbo);
 			glBufferData(GL_ARRAY_BUFFER, 2 * 6 * sizeof(float), &tex_coords, GL_STATIC_DRAW);
 		}
+
+    void setPos(float x_, float y_)
+    {
+      x = x_;
+      y = y_;
+
+      scale = glm::scale(glm::mat4(1.0), glm::vec3(width / windowW, height / windowH, 0));
+			float x_pos = -1.0 + ((x / (windowW*0.5f)) + (width / windowW));
+			float y_pos = 1.0 - ((y / (windowH*0.5f)) + (height / windowH));
+			pos = glm::translate(glm::mat4(1.0), glm::vec3(x_pos, y_pos, 0));
+
+			matrix = pos * scale;
+    }
 
 		void render(ui_shader &shader, glm::vec4 color = glm::vec4(0, 0, 0, 0))
 		{
