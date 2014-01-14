@@ -8,7 +8,6 @@ namespace octet
 		ui_shader ui_shader_;
 
     int windowWidth, windowHeight;
-
 		superChunk* c;
 
 		glm::mat4 model;
@@ -137,7 +136,7 @@ namespace octet
 			//Start by selecting a grass block
 			selectedBlock = grass;
 
-			FILE* file = fopen("saveFile.tc", "r");
+			FILE* file = fopen("../../assets/thronecraft/saveFile.txt", "r");
 
 			//Tell the progam how many chunks we want.
 			if (file == NULL)
@@ -192,7 +191,7 @@ namespace octet
 
 		void SaveChunks()
 		{
-			FILE* file = fopen("saveFile.tc", "w");
+			FILE* file = fopen("../../assets/thronecraft/saveFile.txt", "w");
 
 			fprintf(file, "%i %i %i\n", chunksX, chunksY, chunksZ);
 
@@ -256,11 +255,12 @@ namespace octet
 			return fabsf(val - glm::round(val));
 		}
 
+		//mouse controls
 		void mouse_controls(int width, int height)
 		{
-			if(is_key_down(key_lmb))
+			if(is_key_down(key_rmb))
 			{
-				set_key(key_lmb, false);
+				set_key(key_rmb, false);
 
 				GLfloat depth;
 
@@ -321,8 +321,6 @@ namespace octet
 					}
 				}
 
-				std::cout << "NX: " << nx << " NY: " << ny << " NZ: " << nz << "\n";
-
 				int x = glm::floor(nx);
 				int y = glm::floor(ny);
 				int z = glm::floor(nz);
@@ -335,9 +333,9 @@ namespace octet
 				}
 			}
 
-			if(is_key_down(key_rmb))
+			if(is_key_down(key_lmb))
 			{
-				set_key(key_rmb, false);
+				set_key(key_lmb, false);
 
 				GLfloat depth;
 
