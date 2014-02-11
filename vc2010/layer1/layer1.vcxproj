@@ -24,13 +24,11 @@
     <ClInclude Include="..\..\src\examples\layer1\cube\cube_app.h" />
     <ClInclude Include="..\..\src\examples\layer1\duck\duck_app.h" />
     <ClInclude Include="..\..\src\examples\layer1\examples.h" />
-    <ClInclude Include="..\..\src\examples\layer1\falldown\falldown_app.h" />
     <ClInclude Include="..\..\src\examples\layer1\gif\gif_app.h" />
     <ClInclude Include="..\..\src\examples\layer1\invaderers\invaderers_app.h" />
     <ClInclude Include="..\..\src\examples\layer1\physics\physics_app.h" />
     <ClInclude Include="..\..\src\examples\layer1\ping\ping_app.h" />
     <ClInclude Include="..\..\src\examples\layer1\texture\texture_app.h" />
-    <ClInclude Include="..\..\src\examples\layer1\thronecraft\voxel_app.h" />
     <ClInclude Include="..\..\src\examples\layer1\triangle\triangle_app.h" />
     <ClInclude Include="..\..\src\loaders\collada_builder.h" />
     <ClInclude Include="..\..\src\loaders\dds_decoder.h" />
@@ -39,12 +37,10 @@
     <ClInclude Include="..\..\src\loaders\tga_decoder.h" />
     <ClInclude Include="..\..\src\math\aabb.h" />
     <ClInclude Include="..\..\src\math\bvec4.h" />
-    <ClInclude Include="..\..\src\math\chunk.h" />
     <ClInclude Include="..\..\src\math\ivec4.h" />
     <ClInclude Include="..\..\src\math\mat4t.h" />
     <ClInclude Include="..\..\src\math\quat.h" />
     <ClInclude Include="..\..\src\math\random.h" />
-    <ClInclude Include="..\..\src\math\super_chunk.h" />
     <ClInclude Include="..\..\src\math\vec4.h" />
     <ClInclude Include="..\..\src\platform\app_common.h" />
     <ClInclude Include="..\..\src\platform\CL\opencl.h" />
@@ -64,7 +60,6 @@
     <ClInclude Include="..\..\src\resources\xml_writer.h" />
     <ClInclude Include="..\..\src\shaders\bump_shader.h" />
     <ClInclude Include="..\..\src\shaders\color_shader.h" />
-    <ClInclude Include="..\..\src\shaders\my_shader.h" />
     <ClInclude Include="..\..\src\shaders\phong_shader.h" />
     <ClInclude Include="..\..\src\shaders\shader.h" />
     <ClInclude Include="..\..\src\shaders\texture_shader.h" />
@@ -122,7 +117,6 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>..\..\lib</AdditionalLibraryDirectories>
-      <StackReserveSize>2048000</StackReserveSize>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

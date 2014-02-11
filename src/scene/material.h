@@ -11,7 +11,10 @@
 // This simplifies shader design.
 //
 
-namespace octet {
+namespace octet { namespace scene {
+  /// Material class for representing lambert, blinn and phong.
+  /// This class sets the uniforms for the shader.
+  /// Each parameter of the shader can be a color or an image. We would also like to support functions.
   class material : public resource {
     // material
     ref<param> diffuse;
@@ -23,25 +26,26 @@ namespace octet {
 
     void bind_textures() const {
       // set textures 0, 1, 2, 3 to their respective values
+      diffuse->render(0, GL_TEXTURE_2D);
+      ambient->render(1, GL_TEXTURE_2D);
+      emission->render(2, GL_TEXTURE_2D);
+      specular->render(3, GL_TEXTURE_2D);
+      bump->render(4, GL_TEXTURE_2D);
+      shininess->render(5, GL_TEXTURE_2D);
       glActiveTexture(GL_TEXTURE0);
-      glBindTexture(GL_TEXTURE_2D, diffuse->get_gl_texture());
-      glActiveTexture(GL_TEXTURE1);
-      glBindTexture(GL_TEXTURE_2D, ambient->get_gl_texture());
-      glActiveTexture(GL_TEXTURE2);
-      glBindTexture(GL_TEXTURE_2D, emission->get_gl_texture());
-      glActiveTexture(GL_TEXTURE3);
-      glBindTexture(GL_TEXTURE_2D, specular->get_gl_texture());
-      glActiveTexture(GL_TEXTURE4);
-      glBindTexture(GL_TEXTURE_2D, bump->get_gl_texture());
-      glActiveTexture(GL_TEXTURE5);
-      glBindTexture(GL_TEXTURE_2D, shininess->get_gl_texture());
-      glActiveTexture(GL_TEXTURE0);
+    }
+
+    void init(param *param_) {
+      specular = diffuse = ambient = param_;
+      emission = new param(vec4(0, 0, 0, 0));
+      bump = new param(vec4(0, 0, 0, 0));
+      shininess = new param(vec4(30.0f/255, 0, 0, 0));
     }
 
   public:
     RESOURCE_META(material)
 
-    // default constructor makes a blank material.
+    /// Default constructor makes a blank material.
     material() {
       diffuse = 0;
       ambient = 0;
@@ -51,22 +55,22 @@ namespace octet {
       shininess = 0;
     }
 
-    // don't use this too much, it creates a new image every time.
-    material(const char *texture) {
-      specular = diffuse = ambient = new param(new image(texture));
-      emission = new param(vec4(0, 0, 0, 0));
-      bump = new param(vec4(0, 0, 0, 0));
-      shininess = new param(vec4(30.0f/255, 0, 0, 0));
+    /// Alternative constructor; Don't use this too much, it creates a new image every time.
+    material(const char *texture, sampler *sampler_ = 0) {
+      init(new param(new image(texture), sampler_));
     }
 
-    // don't use this too much, it creates a new image every time.
+    /// Alternative constructor; Don't use this too much, it creates a new image every time.
     material(const vec4 &color) {
-      specular = diffuse = ambient = new param(color);
-      emission = new param(vec4(0, 0, 0, 0));
-      bump = new param(vec4(0, 0, 0, 0));
-      shininess = new param(vec4(30.0f/255, 0, 0, 0));
+      init(new param(color));
     }
 
+    /// create a material from an existing image
+    material(image *img) {
+      init(new param(img));
+    }
+
+    /// Serialize.
     void visit(visitor &v) {
       v.visit(diffuse, atom_diffuse);
       v.visit(ambient, atom_ambient);
@@ -76,6 +80,7 @@ namespace octet {
       v.visit(shininess, atom_shininess);
     }
 
+    /// Set all the parameters.
     void init(param *diffuse, param *ambient, param *emission, param *specular, param *bump, param *shininess) {
       this->diffuse = diffuse;
       this->ambient = ambient;
@@ -85,7 +90,7 @@ namespace octet {
       this->shininess = shininess;
     }
 
-    // make a solid color with a specular highlight
+    /// make a solid color with a specular highlight
     void make_color(const vec4 &color, bool bumpy, bool shiny) {
       diffuse = ambient = new param(color);
       emission = new param(vec4(0, 0, 0, 0));
@@ -94,15 +99,17 @@ namespace octet {
       shininess = new param(vec4(30.0f/255, 0, 0, 0));
     }
 
+    /// Set the uniforms for this material.
     void render(bump_shader &shader, const mat4t &modelToProjection, const mat4t &modelToCamera, vec4 *light_uniforms, int num_light_uniforms, int num_lights) const {
       shader.render(modelToProjection, modelToCamera, light_uniforms, num_light_uniforms, num_lights);
       bind_textures();
     }
 
+    /// Set the uniforms for this material on skinned meshes.
     void render_skinned(bump_shader &shader, const mat4t &cameraToProjection, const mat4t *modelToCamera, int num_nodes, vec4 *light_uniforms, int num_light_uniforms, int num_lights) const {
       shader.render_skinned(cameraToProjection, modelToCamera, num_nodes, light_uniforms, num_light_uniforms, num_lights);
       bind_textures();
     }
   };
-}
+}}
 

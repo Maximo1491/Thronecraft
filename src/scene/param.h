@@ -11,13 +11,16 @@
 // This simplifies shader design.
 //
 
-namespace octet {
-  // a param is an abstract thing that can provide color or other attributes
-  // it could be a texture (with a uv set) or a vertex attribute or a solid color.
-  // we could also extend it to provide functions in shaders.
+namespace octet { namespace scene {
+  /// Color, Image or function describing color at a point in space or on a surface.
+  ///
+  /// A param is an abstract thing that can provide color or other attributes
+  /// it could be a texture (with a uv set) or a vertex attribute or a solid color.
+  /// we could also extend it to provide functions in shaders.
   class param : public resource {
     atom_t kind;
     ref<image> img;
+    ref<sampler> smpl;
 
     vec4 color;
 
@@ -27,32 +30,36 @@ namespace octet {
   public:
     RESOURCE_META(param)
 
-    // default constructor makes a blank material.
+    /// default constructor makes a blank material.
     param() {
       gl_texture = 0;
       kind = atom_color;
       color = vec4(0.5f, 0.5f, 0.5f, 1);
     }
 
+    /// Make a solid color parameter.
     param(const vec4 &color) {
       gl_texture = 0;
       this->color = color;
       kind = atom_color;
     }
 
-    param(image *img) {
+    /// Make an image parameter
+    param(image *img, sampler *smpl = 0) {
       gl_texture = 0;
       this->img = img;
+      this->smpl = smpl;
       kind = atom_image;
     }
 
-    // access attributes by name
+    /// Serialize or access attributes by name
     void visit(visitor &v) {
       v.visit(kind, atom_kind);
       v.visit(img, atom_image);
+      v.visit(smpl, atom_sampler);
     }
 
-    // generate a texture for this parameter
+    /// generate a texture for this parameter
     GLuint get_gl_texture() {
       if (!gl_texture) {
         if (kind == atom_image) {
@@ -60,24 +67,40 @@ namespace octet {
         } else {
           char name[16];
           sprintf(name, "#%02x%02x%02x%02x", (int)(color[0]*255.0f+0.5f), (int)(color[1]*255.0f+0.5f), (int)(color[2]*255.0f+0.5f), (int)(color[3]*255.0f+0.5f));
-          gl_texture = resources::get_texture_handle(GL_RGBA, name);
+          gl_texture = resource_dict::get_texture_handle(GL_RGBA, name);
         }
       }
       return gl_texture;
     }
 
-    // what is the color of this parameter
+    /// Get the color for this parameter.
     vec4 get_color() {
       return color;
     }
 
+    /// Set the color for this parameter.
     void set_color(const vec4 &value) {
       color = value;
     }
 
+    /// Get the image for this parameter.
     image *get_image() {
       return img;
     }
+
+    /// Get the sampler for this parameter.
+    sampler *get_sampler() {
+      return smpl;
+    }
+
+    /// Render this parameter into a texture slot.
+    void render(unsigned slot, unsigned target) {
+      glActiveTexture(GL_TEXTURE0 + slot);
+      glBindTexture(target, get_gl_texture());
+      if (smpl) {
+        smpl->render(target);
+      }
+    }
   };
-}
+}}
 

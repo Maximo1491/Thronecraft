@@ -7,7 +7,7 @@
 // Scene Node
 //
 
-namespace octet {
+namespace octet { namespace scene {
   class scene_node : public resource {
     // every scene_node has a parent scene_node except the roots (NULL)
     // todo: support DAGs with multiple node parents
@@ -55,11 +55,11 @@ namespace octet {
     // visitor pattern used for game saves/loads (serialisation)
     //
     void visit(visitor &v) {
-      app_utils::log("visit scene_node\n");
+      log("visit scene_node\n");
       v.visit(parent, atom_parent);
-      app_utils::log("visit scene_node children\n");
+      log("visit scene_node children\n");
       v.visit(children, atom_children);
-      app_utils::log("visit scene_node nodeToParent\n");
+      log("visit scene_node nodeToParent\n");
       v.visit(nodeToParent, atom_nodeToParent);
       v.visit(sid, atom_sid);
     }
@@ -108,7 +108,7 @@ namespace octet {
       dynarray<int> parent_stack;
       stack.push_back(this);
       parent_stack.push_back(-1);
-      while (!stack.is_empty()) {
+      while (!stack.empty()) {
         scene_node *node = stack.back();
         int parent = parent_stack.back();
         int new_parent = nodes.size();
@@ -123,4 +123,4 @@ namespace octet {
       }
     }
   };
-}
+}}

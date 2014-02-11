@@ -18,7 +18,7 @@
 //   Simple 2D physics
 //
 
-/*namespace octet {
+namespace octet {
   class sprite_2d {
     // rigid body information for this sprite.
     b2Body *body;
@@ -53,12 +53,7 @@
       enabled = true;
     }
 
-		b2Body* getBody()
-		{
-			return body;
-		}
-
-    void render(my_shader &shader, mat4t &cameraToWorld) {
+    void render(texture_shader &shader, mat4t &cameraToWorld) {
       if (!texture) return;
 
       mat4t modelToWorld;
@@ -106,11 +101,6 @@
       glDrawArrays(GL_TRIANGLE_FAN, 0, count);
     }
 
-		void setEnabled(bool b)
-		{
-			enabled = b;
-		}
-
     bool &is_enabled() {
       return enabled;
     }
@@ -125,7 +115,7 @@
     mat4t cameraToWorld;
 
     // shader to draw a textured triangle
-    my_shader texture_shader_;
+    texture_shader texture_shader_;
 
     enum {
       num_sound_sources = 32,
@@ -161,13 +151,13 @@
       cameraToWorld.loadIdentity();
       cameraToWorld.translate(0, 0, 5);
 
-      GLuint ship = resources::get_texture_handle(GL_RGBA, "assets/invaderers/ship.gif");
-      GLuint GameOver = resources::get_texture_handle(GL_RGBA, "assets/invaderers/GameOver.gif");
-      GLuint invaderer = resources::get_texture_handle(GL_RGBA, "assets/invaderers/invaderer.gif");
+      GLuint ship = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/ship.gif");
+      GLuint GameOver = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/GameOver.gif");
+      GLuint invaderer = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/invaderer.gif");
 
       // sounds
-      whoosh = resources::get_sound_handle(AL_FORMAT_MONO16, "assets/invaderers/whoosh.wav");
-      bang = resources::get_sound_handle(AL_FORMAT_MONO16, "assets/invaderers/bang.wav");
+      whoosh = resource_dict::get_sound_handle(AL_FORMAT_MONO16, "assets/invaderers/whoosh.wav");
+      bang = resource_dict::get_sound_handle(AL_FORMAT_MONO16, "assets/invaderers/bang.wav");
       cur_source = 0;
       alGenSources(num_sound_sources, sources);
 
@@ -269,4 +259,3 @@
     }
   };
 }
-*/

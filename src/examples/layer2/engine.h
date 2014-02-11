@@ -4,7 +4,7 @@
 //
 // Modular Framework for OpenGLES2 rendering on multiple platforms.
 //
-// animation example: Drawing an jointed figure with animation
+// game engine example: Load a scene from a collada file and run it.
 //
 // Level: 2
 //
@@ -24,7 +24,7 @@ namespace octet {
     typedef scene_node scene_node;
 
     // named resources loaded from collada file
-    resources dict;
+    resource_dict dict;
 
     // shaders to draw triangles
     bump_shader object_shader;
@@ -48,7 +48,7 @@ namespace octet {
     void load_file(const char *filename) {
       FILE *file = fopen(app_utils::get_path(filename), "rb");
       char buf[8];
-      scene *app_scene = 0;
+      visual_scene *app_scene = 0;
       if (file && fread(buf, 1, sizeof(buf), file) && !memcmp(buf, "octet", 5)) {
         fseek(file, 0, SEEK_SET);
         binary_reader r(file);
@@ -64,7 +64,7 @@ namespace octet {
         }
 
         builder.get_resources(dict);
-        app_scene = dict.get_scene(builder.get_default_scene());
+        app_scene = dict.get_visual_scene(builder.get_default_scene());
 
         assert(app_scene);
 
@@ -75,6 +75,7 @@ namespace octet {
 
       app_scene->play_all_anims(dict);
 
+      // add modifiers here to test them.
       for (unsigned i = 0; i != app_scene->get_num_mesh_instances(); ++i) {
         mesh_instance *mi = app_scene->get_mesh_instance(i);
         //mi->set_mesh(new wireframe(new displacement_map(mi->get_mesh())));
@@ -90,10 +91,10 @@ namespace octet {
         ball.init(this, cameraToWorld.w().length(), 360.0f);
       }
     }
+
   public:
     // this is called when we construct the class
     engine(int argc, char **argv) : app(argc, argv), ball() {
-
       // test the c++ parser
       //parser.parse("int x = 1;");
     }
@@ -106,6 +107,18 @@ namespace octet {
 
       const char *filename = 0;
 
+      /*video_capture *vc = get_video_capture();
+      int vco = vc->open();
+      if (vco >= 0) printf("vc w=%d h=%d\n", vc->width(), vc->height());
+      dynarray<uint8_t> pixels;
+      pixels.resize(vc->width() * vc->height() * vc->bits_per_pixel() / 8);
+      vc->read(&pixels[0], pixels.size());
+      vc->read(&pixels[0], pixels.size());
+      vc->read(&pixels[0], pixels.size());
+      vc->read(&pixels[0], pixels.size());
+      vc->close();*/
+
+      // note that you can also drag and drop files onto an active octet window.
       int selector = 0;
       switch (selector) {
         case 0: filename = "assets/duck_triangulate.dae"; break;
@@ -116,7 +129,11 @@ namespace octet {
         case 5: filename = "external/Arteria3d/ElvenMale/ElevenMaleKnight_blender.dae"; break;
         case 6: filename = "external/Arteria3d/arteria3d_tropicalpack/flowers/flower%202.dae"; break; 
         case 7: filename = "assets/plane.dae"; break;
+        case 8: filename = "external/Arteria3d/chilun-fail.dae"; break; 
       }
+
+      //dynarray<uint8_t> buf;
+      //app_utils::get_url(buf, "zip://assets/big.zip/big.fnt");
 
       load_file(filename);
 
@@ -127,35 +144,6 @@ namespace octet {
 
     // this is called to draw the world
     void draw_world(int x, int y, int w, int h) {
-      // set a viewport - includes whole window area
-      glViewport(x, y, w, h);
-
-      // clear the background to black
-      glClearColor(0.5f, 0.5f, 0.5f, 1);
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-      // allow Z buffer depth testing (closer objects are always drawn in front of far ones)
-      glEnable(GL_DEPTH_TEST);
-
-      GLint param;
-      glGetIntegerv(GL_SAMPLE_BUFFERS, &param);
-      if (param == 0) {
-        // if multisampling is disabled, we can't use GL_SAMPLE_COVERAGE (which I think is mean)
-        // Instead, allow alpha blend (transparency when alpha channel is 0)
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-        // this is a rather brutal alpha test that cuts off anything with a small alpha.
-        #ifndef SN_TARGET_PSP2
-          glEnable(GL_ALPHA_TEST);
-          glAlphaFunc(GL_GREATER, 0.9f);
-        #endif
-      } else {
-        // if multisampling is enabled, use GL_SAMPLE_COVERAGE instead
-        glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
-        glEnable(GL_SAMPLE_COVERAGE);
-      }
-
       // poll web server
       server.update();
 
@@ -185,10 +173,11 @@ namespace octet {
         queue.resize(0);
       }
 
-      scene *app_scene = dict.get_active_scene();
+      visual_scene *app_scene = dict.get_active_scene();
       if (app_scene && app_scene->get_num_camera_instances()) {
         int vx = 0, vy = 0;
         get_viewport_size(vx, vy);
+        app_scene->begin_render(vx, vy);
 
         camera_instance *cam = app_scene->get_camera_instance(0);
         scene_node *node = cam->get_node();

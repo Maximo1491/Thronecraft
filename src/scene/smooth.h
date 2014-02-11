@@ -7,7 +7,7 @@
 // Mesh smooth modifier. Work in progress.
 //
 
-namespace octet {
+namespace octet { namespace scene {
   class smooth : public mesh {
     // source mesh. Provides underlying geometry.
     ref<mesh> src;
@@ -28,10 +28,10 @@ namespace octet {
     int depth;
 
     bool split_edge(uint8_t *dest, const uint8_t *src0, const uint8_t *src1, unsigned stride) {
-      const vec3 &pos0 = (const vec3&)src0[pos_offset];
-      const vec3 &pos1 = (const vec3&)src1[pos_offset];
-      const vec3 &n0 = (const vec3&)src0[normal_offset];
-      const vec3 &n1 = (const vec3&)src1[normal_offset];
+      const vec3p &pos0 = (const vec3p&)src0[pos_offset];
+      const vec3p &pos1 = (const vec3p&)src1[pos_offset];
+      const vec3p &n0 = (const vec3p&)src0[normal_offset];
+      const vec3p &n1 = (const vec3p&)src1[normal_offset];
       //const vec3 &uv0 = (const vec3&)src0[uv_offset];
       //const vec3 &uv1 = (const vec3&)src1[uv_offset];
 
@@ -40,7 +40,7 @@ namespace octet {
       }
 
       // Catmul-Rom spline
-      vec3 diff = pos1 - pos0;
+      vec3 diff = (vec3)pos1 - (vec3)pos0;
       vec3 t0 = cross(cross(n0, diff), n0); // bezier tangent * 3
       vec3 t1 = cross(cross(n1, diff), n1); // bezier tangent * 3
 
@@ -48,10 +48,10 @@ namespace octet {
         ((float*)dest)[i] = (((float*)src0)[i] + ((float*)src1)[i]) * 0.5f;
       }
 
-      vec3 &pos = (vec3&)dest[pos_offset];
-      vec3 &normal = (vec3&)dest[normal_offset];
+      vec3p &pos = (vec3p&)dest[pos_offset];
+      vec3p &normal = (vec3p&)dest[normal_offset];
 
-      pos = (pos0 + pos1) * 0.5f + (t0 - t1) * 0.125; // (3/8)/3 = 1/8
+      pos = ((vec3)pos0 + (vec3)pos1) * 0.5f + (t0 - t1) * 0.125; // (3/8)/3 = 1/8
       normal = normalize(normal);
 
       return true;
@@ -70,7 +70,7 @@ namespace octet {
 
       dest_vertices.resize((num_dest_vertices + 1) * stride);
 
-      app_utils::log("%*se%d %d %d\n", depth*2, "", num_dest_vertices, i0, i1);
+      log("%*se%d %d %d\n", depth*2, "", num_dest_vertices, i0, i1);
       bool split = split_edge(
         &dest_vertices[num_dest_vertices * stride],
         &dest_vertices[i0 * stride],
@@ -95,7 +95,7 @@ namespace octet {
 
       depth++;
 
-      app_utils::log("%*sat: %d %d %d %d %d %d\n", depth*2, "", i0, i1, i2, i3, i4, i5);
+      log("%*sat: %d %d %d %d %d %d\n", depth*2, "", i0, i1, i2, i3, i4, i5);
 
       switch( (i3 != 0) + (i4 != 0)*2 + (i5 != 0)*4 ) {
         case 0: {
@@ -222,7 +222,7 @@ namespace octet {
       set_num_vertices(num_dest_vertices);
       set_num_indices(dest_indices.size());
 
-      dump(app_utils::log("dump"));
+      dump(log("dump"));
     }
 
     void visit(visitor &v) {
@@ -234,8 +234,8 @@ namespace octet {
     virtual bool is_smooth(const vec3 &n0, const vec3 &n1, int depth) {
       return true;
       float dotp = dot(n0, n1);
-      app_utils::log("%*s  dotp=%f\n", depth*2, "", dotp);
+      log("%*s  dotp=%f\n", depth*2, "", dotp);
       return (dotp >= 0.9f) || depth >= 4;
     }
   };
-}
+}}

@@ -22,6 +22,7 @@
 #pragma warning(disable : 4996)
 #pragma warning(disable : 4345)
 #pragma warning(disable : 4530)
+#pragma warning(disable : 4799)
 
 // basic windows audio
 #pragma comment(lib, "winmm.lib")
@@ -69,14 +70,12 @@
 // A limited number uses per program is recommended.
 #define OCTET_HOT __forceinline
 
-#define OCTET_SSE 0
 #include <xmmintrin.h>
+#define snprintf sprintf_s
 
 namespace octet {
-  class HWND_cmp {
+  class HWND_cmp : public hash_map_cmp {
   public:
-    static unsigned fuzz_hash(unsigned hash) { return hash ^ (hash >> 3) ^ (hash >> 5); }
-
     static unsigned get_hash(HWND key) { return fuzz_hash((unsigned)(intptr_t)key); }
 
     static bool is_empty(HWND key) { return !key; }
@@ -149,7 +148,7 @@ namespace octet {
       RegisterClass (&wndclass);
 
       gl_context = 0;
-
+     
 			RECT desktop;
 			const HWND hDesktop = GetDesktopWindow();
 			GetWindowRect(hDesktop, &desktop);
@@ -157,21 +156,21 @@ namespace octet {
 			RECT console;
 			HWND hConsole = GetConsoleWindow();
 			GetWindowRect(hConsole, &console);
-			MoveWindow(hConsole, 10, (desktop.bottom*0.5) - (console.bottom*0.5), console.right*0.7, console.bottom*0.7, TRUE);
+			MoveWindow(hConsole, 10, (int)((desktop.bottom*0.5f) - (console.bottom*0.5f)), (int)(console.right * 0.6f), (int)(console.bottom * 0.6f), TRUE);
 
-			if(desktop.right == 1920 && desktop.bottom == 1080)
-      {
-				window_handle = CreateWindow(L"MyClass", L"Thronecraft",
-				  WS_OVERLAPPEDWINDOW, console.right*0.7 + 20, 10, 900, 900,
-				  NULL, NULL, wndclass.hInstance, (LPVOID)this
-				);
+			if (desktop.right == 1920 && desktop.bottom == 1080)
+			{
+				window_handle = CreateWindow(L"MyClass", L"Volumetric",
+					WS_OVERLAPPEDWINDOW, (int)(console.right * 0.6f + 20.0f), 180, 1280, 720,
+					NULL, NULL, wndclass.hInstance, (LPVOID)this
+					);
 			}
 			else
 			{
-				window_handle = CreateWindow(L"MyClass", L"Thronecraft",
-				  WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-				  NULL, NULL, wndclass.hInstance, (LPVOID)this
-				);
+				window_handle = CreateWindow(L"MyClass", L"Volumetric",
+					WS_OVERLAPPEDWINDOW, 100, 10, 1280, 720,
+					NULL, NULL, wndclass.hInstance, (LPVOID)this
+					);
 			}
 
       map()[window_handle] = this;
@@ -199,10 +198,7 @@ namespace octet {
       GetClientRect(window_handle, &rect);
       set_viewport_size(rect.right - rect.left, rect.bottom - rect.top);
 
-			RECT pos;
-			GetWindowRect(window_handle, &pos);
-
-      draw_world(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, pos.left, pos.top);
+      draw_world(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top);
       inc_frame_number();
 
       SwapBuffers(hdc);
@@ -293,7 +289,7 @@ namespace octet {
             } else if (msg.message == WM_MOUSEMOVE) {
               app->set_mouse_pos(msg.lParam & 0xffff, msg.lParam >> 16);
 							app->motion(msg.lParam & 0xffff, msg.lParam >> 16, &app->window_handle);
-							ShowCursor(false);
+							//ShowCursor(false);
             } else if (msg.message == WM_MOUSEWHEEL) {
               app->set_mouse_wheel(app->get_mouse_wheel() + (int)msg.wParam);
             } else if (msg.message == WM_LBUTTONDOWN || msg.message == WM_LBUTTONUP) {
@@ -314,7 +310,7 @@ namespace octet {
 
         for (int i = 0; i != m.size(); ++i) {
           // note: because Win8 generates an invisible window, we need to check m.value(i)
-          if (m.key(i) && m.value(i)) m.value(i)->render();
+          if (m.get_key(i) && m.get_value(i)) m.get_value(i)->render();
         }
 
         Fake_AL_context()->update();
@@ -330,18 +326,4 @@ namespace octet {
 
   };
 
-  //////////////////////////////////////
-  //
-  // platform specific intrinsics
-  //
-
-  // big endian unaligned load
-  static unsigned uint32_be(const uint8_t *src) {
-    return _byteswap_ulong(*(unsigned*)src);
-  }
-
-  // little endian unaligned load
-  static unsigned uint32_le(const uint8_t *src) {
-    return *(unsigned*)src;
-  }
 }

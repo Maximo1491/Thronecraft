@@ -7,8 +7,18 @@
 // raw 3D mesh container
 //
 
-namespace octet {
+namespace octet { namespace scene {
+  /// General mesh class. This is a base class for all meshes such as mesh_box.
+  /// Meshes may be dynamic or static.
   class mesh : public resource {
+  public:
+    // default vertex format
+    struct vertex {
+      vec3p pos;
+      vec3p normal;
+      vec2p uv;
+    };
+  private:
     ref<gl_resource> vertices;
     ref<gl_resource> indices;
 
@@ -31,13 +41,52 @@ namespace octet {
     // bounding box
     aabb mesh_aabb;
 
+    // add a new edge to a hash map. (index, index) -> (triangle+1, triangle+1)
+    static void add_edge(hash_map<uint64_t, uint64_t> &edges, unsigned tri_idx, unsigned i0, unsigned i1) {
+      if (i0 == i1) return; // note: (0, 0) means empty
+
+      if (i0 > i1) { swap(i0, i1); }
+      uint64_t key = ((uint64_t)i1 << 32) | i0;
+
+      uint64_t &edge = edges[key];
+      uint32_t upper = (uint32_t)(edge >> 32);
+      //uint32_t lower = (uint32_t)(edge);
+
+      if (edge == 0) {
+        // first triangle
+        edge = tri_idx+1;
+      } else if (upper == 0) {
+        // second triangle
+        edge = ((uint64_t)upper << 32) | (tri_idx+1);
+      } else {
+        // three triangles join here... ignore.
+      }
+    }
+
+    // return true if the triangle tri is visible from the viewpoint (in model space)
+    // the exact definition of "is visible" depends on winding order.
+    static bool tri_is_visible(
+      unsigned tri, unsigned pos_offset, unsigned stride,
+      const uint32_t *ip, const uint8_t *vp, const vec3 &viewpoint,
+      bool is_directional
+    ) {
+      const vec3p &pa = *(const vec3p*)(vp + ip[tri+0] * stride + pos_offset);
+      const vec3p &pb = *(const vec3p*)(vp + ip[tri+1] * stride + pos_offset);
+      const vec3p &pc = *(const vec3p*)(vp + ip[tri+2] * stride + pos_offset);
+      vec3 normal = cross(((vec3)pb - pa), ((vec3)pc - pa));
+      vec3 dir = is_directional ? viewpoint - pa : viewpoint;
+      return dot(normal, dir) <= 0;
+    }
+
   public:
     RESOURCE_META(mesh)
 
+    /// make a new, empty, mesh.
     mesh(skin *_skin=0) {
       init(_skin);
     }
 
+    /// Serialize.
     void visit(visitor &v) {
       v.visit(vertices, atom_vertices);
       v.visit(indices, atom_indices);
@@ -50,12 +99,14 @@ namespace octet {
       v.visit(normalized, atom_normalized);
       v.visit(num_slots, atom_num_slots);
       v.visit(mesh_skin, atom_mesh_skin);
-      v.visit(mesh_aabb, atom_mesh_aabb);
+      v.visit(mesh_aabb, atom_aabb);
     }
 
+    // Destructor
     ~mesh() {
     }
 
+    // Init function used for aggregated meshes. (Deprecated).
     void init(skin *_skin=0) {
       vertices = new gl_resource();
       indices = new gl_resource();
@@ -70,17 +121,26 @@ namespace octet {
       normalized = 0;
 
       num_slots = 0;
-      index_type = GL_UNSIGNED_INT;
+      index_type = GL_UNSIGNED_SHORT;
       mode = GL_TRIANGLES;
 
       mesh_skin = _skin;
     }
 
+    /// Set the defuault mesh parameters, used for boxes, spheres etc.
+    void set_default_attributes() {
+      add_attribute(attribute_pos, 3, GL_FLOAT, 0);
+      add_attribute(attribute_normal, 3, GL_FLOAT, 12);
+      add_attribute(attribute_uv, 2, GL_FLOAT, 24);
+      set_params(32, 0, 0, GL_TRIANGLES, GL_UNSIGNED_INT);
+    }
+
+    /// reset the mesh to empty.
     void clear_attributes() {
       num_slots = 0;
     }
 
-    // eg. add_attribute(attribute_pos, 3, GL_FLOAT, 0)
+    /// Add an extra attribute to the mesh. eg. add_attribute(attribute_pos, 3, GL_FLOAT, 0)
     unsigned add_attribute(unsigned attr, unsigned size, unsigned kind, unsigned offset, unsigned norm=0) {
       assert(num_slots < max_slots);
       format[num_slots] = (offset << 9) + (attr << 5) + ((size-1) << 3) + (kind - GL_BYTE);
@@ -88,85 +148,99 @@ namespace octet {
       return num_slots++;
     }
 
+    /// helper function: how many bytes does this GL_? type use?
     static unsigned kind_size(unsigned kind) {
       static const uint8_t bytes[] = { 1, 1, 2, 2, 4, 4, 4, 4 };
       return kind < GL_BYTE || kind > GL_FLOAT ? 0 : bytes[kind - GL_BYTE];
     }
 
+    /// For a particular slot, get the offset in the vertex buffer of the first attribute.
     unsigned get_offset(unsigned slot) const {
       return ( format[slot] >> 9 ) & 0x3f;
     }
 
+    /// For a particular slot, get the attribute used by the shader.
     unsigned get_attr(unsigned slot) const {
       return ( format[slot] >> 5 ) & 0x0f;
     }
 
+    /// For a particular slot, get the number of lanes in the attribute.
     unsigned get_size(unsigned slot) const {
       return ( ( format[slot] >> 3 ) & 0x03 ) + 1;
     }
 
+    /// For a particular slot, get the GL kind of the attribute (eg. GL_FLOAT)
     unsigned get_kind(unsigned slot) const {
       return ( ( format[slot] >> 0 ) & 0x07 ) + GL_BYTE;
     }
 
+    /// Get the stride of attributes in this mesh.
     unsigned get_stride() const {
       return stride;
     }
 
+    /// Get the number of vertices to be drawn. (actual number may be higher than this).
     unsigned get_num_vertices() const {
       return num_vertices;
     }
 
+    /// Get the number of indices to be drawn and hence the number of primitives.
     unsigned get_num_indices() const {
       return num_indices;
     }
 
+    /// Get the kind of primitive we are drawing. (ie. GL_TRIANGLES etc.)
     unsigned get_mode() const {
       return mode;
     }
 
+    /// get the type of the indices (ie. GL_UNSIGNED_SHORT/GL_UNSIGNED_INT)
     unsigned get_index_type() const {
       return index_type;
     }
 
+    /// Get the number of slots (attributes) we have.
     unsigned get_num_slots() const {
       return num_slots;
     }
 
-    // get the optional skin data
+    /// Get the optional skin data
     skin *get_skin() const {
       return (skin*)mesh_skin;
     }
 
+    /// Set the number of vertices to draw. (may be smaller that the buffer size).
     void set_num_vertices(unsigned value) {
       num_vertices = value;
     }
 
+    /// Set the number of indices to draw. (may be smaller that the buffer size).
     void set_num_indices(unsigned value) {
       num_indices = value;
     }
 
+    /// Set the kind of primitive to draw. (ie. GL_TRIANGLES etc.)
     void set_mode(unsigned value) {
       mode = value;
     }
 
-    // set the optional skin
-    // note: the mesh state owns the skin.
+    /// set the optional skin
+    /// note: the mesh state owns the skin.
     void set_skin(skin *value) {
       mesh_skin = value;
     }
     
-    // set the axis aligned bounding box of the untransformed mesh
+    /// set the axis aligned bounding box of the untransformed mesh
     void set_aabb(const aabb &value) {
       mesh_aabb = value;
     }
 
-    // get the axis aligned bounding box of the untransformed mesh
+    /// get the axis aligned bounding box of the untransformed mesh
     aabb get_aabb() {
       return mesh_aabb;
     }
 
-    // return true if this mesh has a particular attribute
+    /// return true if this mesh has a particular attribute
     bool has_attribute(unsigned attr) {
       for (unsigned i = 0; i != num_slots; ++i) {
         if (get_attr(i) == attr) {
@@ -176,7 +250,7 @@ namespace octet {
       return false;
     }
 
-    // get which slot a particular attribute is in
+    /// get which slot a particular attribute is in. (does a search).
     unsigned get_slot(unsigned attr) const {
       for (unsigned i = 0; i != max_slots; ++i) {
         if (!format[i]) break;
@@ -187,7 +261,7 @@ namespace octet {
       return ~0;
     }
 
-    // get a vec4 value of an attribute (only when not in a vbo)
+    /// Get a vec4 value of an attribute. (Deprecated)
     vec4 get_value(unsigned slot, unsigned index) const {
       if (get_kind(slot) == GL_FLOAT) {
         const float *src = (float*)((uint8_t*)vertices->lock_read_only() + stride * index + get_offset(slot));
@@ -211,6 +285,7 @@ namespace octet {
       return vec4(0, 0, 0, 0);
     }
 
+    /// get the values of a specific attribute. dest must match kind. (Deprecated)
     void get_values(unsigned slot, uint8_t *dest, unsigned dest_stride) {
       unsigned bytes = kind_size(get_kind(slot)) * get_size(slot);
       unsigned nv = get_num_vertices();
@@ -223,8 +298,8 @@ namespace octet {
       vertices->unlock_read_only();
     }
 
-    // set a vec4 value of an attribute (only when not in a vbo)
-    void set_value(unsigned slot, unsigned index, vec4 value) {
+    /// set a vec4 value of an attribute (only when not in a vbo)  (Deprecated)
+    void set_value(unsigned slot, unsigned index, const vec4 &value) {
       if (get_kind(slot) == GL_FLOAT) {
         float *src = (float*)((uint8_t*)vertices->lock() + stride * index + get_offset(slot));
         unsigned size = get_size(slot);
@@ -244,6 +319,7 @@ namespace octet {
       }
     }
 
+    /// Get an index value from the index buffer object.
     unsigned get_index(unsigned index) const {
       unsigned result = 0;
       if (index_type == GL_UNSIGNED_SHORT) {
@@ -258,16 +334,19 @@ namespace octet {
       return result;
     }
 
+    /// Allocate VBO and IBO objects together.
     void allocate(unsigned vsize, unsigned isize) {
       vertices->allocate(GL_ARRAY_BUFFER, vsize);
       indices->allocate(GL_ELEMENT_ARRAY_BUFFER, isize);
     }
 
+    /// allocate and assign data to IBO and VBO
     void assign(unsigned vsize, unsigned isize, uint8_t *vsrc, uint8_t *isrc) {
       vertices->assign(vsrc, 0, vsize);
       indices->assign(isrc, 0, isize);
     }
 
+    /// set standard parameters of the mesh together.
     void set_params(unsigned stride_, unsigned num_indices_, unsigned num_vertices_, unsigned mode_, unsigned index_type_) {
       stride = stride_;
       num_indices = num_indices_;
@@ -276,6 +355,7 @@ namespace octet {
       index_type = index_type_;
     }
 
+    /// dump the mesh to a file in ASCII. Used to debug mesh transforms.
     void dump(FILE *file) {
       fprintf(file, "<model mode=%04x index_type=%04x stride=%d>\n", mode, index_type, stride);
       for (unsigned slot = 0; slot != num_slots; ++slot) {
@@ -296,8 +376,8 @@ namespace octet {
       fprintf(file, "</model>\n");
     }
 
-    // render a mesh with OpenGL
-    // assume the shader, uniforms and render params are already set up.
+    /// When rendering a mesh, call this first to enable the attributes.
+    /// assume the shader, uniforms and render params are already set up.
     void enable_attributes() const {
       vertices->bind();
 
@@ -313,12 +393,18 @@ namespace octet {
       }
     }
 
+    /// When rendering a mesh, call this next to draw the primitives.
     void draw() {
       indices->bind();
-			//glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
-      glDrawElements(get_mode(), get_num_indices(), get_index_type(), (GLvoid*)0);
+      //printf("de %04x %d %d\n", get_mode(), get_num_vertices(), get_index_type());
+      if (get_index_type()) {
+        glDrawElements(get_mode(), get_num_indices(), get_index_type(), (GLvoid*)0);
+      } else {
+        glDrawArrays(get_mode(), 0, get_num_vertices());
+      }
     }
 
+    /// When rendering a mesh, call this last to disable attributes.
     void disable_attributes() {
       for (unsigned slot = 0; slot != get_num_slots(); ++slot) {
         unsigned attr = get_attr(slot);
@@ -326,31 +412,25 @@ namespace octet {
       }
     }
 
+    /// render in one pass.
     void render() {
       enable_attributes();
       draw();
       disable_attributes();
     }
 
+    /// Use the mesh builder to make a cube (Deprecated).
     void make_cube(float size = 1.0f) {
       init();
       mesh_builder b;
     
       b.init(6*4, 6*6);
+
       b.add_cube(size);
       b.get_mesh(*this);
     }
 
-    void make_rectangle(float x = 1.0f, float y = 1.0f, float z = 1.0f) {
-      init();
-      mesh_builder b;
-    
-      b.init(6*4, 6*6);
-      b.add_cube(1.0f);
-      b.scale(x, y, z);
-      b.get_mesh(*this);
-    }
-
+    /// Use the mesh builder to make an axis aligned  box cube (Deprecated).
     void make_aa_box(float x, float y, float z) {
       init();
       mesh_builder b;
@@ -362,6 +442,7 @@ namespace octet {
       b.get_mesh(*this);
     }
 
+    /// Use the mesh builder to make a plane (Deprecated).
     void make_plane(float size = 1.0f, unsigned nx=1, unsigned ny=1) {
       init();
       mesh_builder b;
@@ -370,6 +451,7 @@ namespace octet {
       b.get_mesh(*this);
     }
 
+    /// Use the mesh builder to make a sphere (Deprecated)
     void make_sphere(float radius=1.0f, unsigned slices=16, unsigned stacks=16) {
       init();
       mesh_builder b;
@@ -380,6 +462,7 @@ namespace octet {
       b.get_mesh(*this);
     }
 
+    /// Use the mesh builder to make a cone (Deprecated)
     void make_cone(float radius=1.0f, float height=1.0f, unsigned slices=32, unsigned stacks=1) {
       init();
       mesh_builder b;
@@ -390,8 +473,7 @@ namespace octet {
       b.get_mesh(*this);
     }
 
-    // make a bunch of lines to show normals.
-    // render this with GL_LINES
+    /// Make a mesh to visualise normals (Deprecated)
     void make_normal_visualizer(const mesh &source, float length, unsigned normal_attr) {
       init();
       mesh_builder builder;
@@ -403,8 +485,8 @@ namespace octet {
       for (unsigned i = 0; i != source.get_num_vertices(); ++i) {
         vec4 pos = source.get_value(pos_slot, i);
         vec4 normal = source.get_value(normal_slot, i);
-        unsigned idx = builder.add_vertex(pos, normal, 0, 0, vec4(0,0,1,1));
-        builder.add_vertex(pos + normal * length, normal, 0, 0, vec4(0,0,1,1));
+        unsigned idx = builder.add_vertex(pos, normal, 0, 0);
+        builder.add_vertex(pos + normal * length, normal, 0, 0);
         builder.add_index(idx);
         builder.add_index(idx+1);
       }
@@ -413,7 +495,7 @@ namespace octet {
       set_mode( GL_LINES );
     }
 
-    // make the normal, tangent, bitangent space for each vertex
+    /// make the normal, tangent, bitangent space for each vertex (Deprectated).
     void add_3d_normals(const mesh &source) {
       init();
       if (source.get_mode() != GL_TRIANGLES || source.get_num_indices() % 3 != 0) {
@@ -503,7 +585,7 @@ namespace octet {
       }
     }
 
-    // apply a matrix to every position
+    /// Apply a matrix to every position
     void transform(unsigned attr, mat4t &matrix) {
       if (get_num_vertices() == 0) {
         return;
@@ -517,85 +599,192 @@ namespace octet {
       }
     }
 
-    // *very* slow ray cast.
-    // returns "barycentric" coordinates.
-    // eg. hit pos = bary[0] * pos0 + bary[1] * pos1 + bary[2] * pos2;
-    // eg. hit uv = bary[0] * uv0 + bary[1] * uv1 + bary[2] * uv2;
-    bool ray_cast(const vec4 &org, const vec4 &dir, int indices[], vec4 &bary) {
-      //static FILE *file = fopen("c:/tmp/3.txt","w");
-      //fprintf(file, "org=%s dir=%s\n", org.toString(), dir.toString());
-      unsigned pos_slot = get_slot(attribute_pos);
-      for (unsigned i = 0; i != get_num_indices(); i += 3) {
-        unsigned idx[3] = {
-          get_index(i),
-          get_index(i+1),
-          get_index(i+2)
-        };
-
-        vec4 a = get_value(pos_slot, idx[0]) - org;
-        vec4 b = get_value(pos_slot, idx[1]) - org;
-        vec4 c = get_value(pos_slot, idx[2]) - org;
-        vec4 d = dir;
-
-        //fprintf(file, "a=%s b=%s c=%s d=%s\n", a.toString(), b.toString(), c.toString(), d.toString());
-
-        // solve [ba, bb, bc, bd] * [[ax, ay, az, 1], [bx, by, bz, 1], [cx, cy, cz, 1], [dx, dy, dz, 0]] = [0, 0, 0, 1]
-        float det = (
-          -a.x()*b.y()*d.z()+a.x()*b.z()*d.y()
-          +a.x()*c.y()*d.z()-a.x()*c.z()*d.y()
-          +a.y()*b.x()*d.z()-a.y()*b.z()*d.x()
-          -a.y()*c.x()*d.z()+a.y()*c.z()*d.x()
-          -a.z()*b.x()*d.y()+a.z()*b.y()*d.x()
-          +a.z()*c.x()*d.y()-a.z()*c.y()*d.x()
-          -b.x()*c.y()*d.z()+b.x()*c.z()*d.y()
-          +b.y()*c.x()*d.z()-b.y()*c.z()*d.x()
-          -b.z()*c.x()*d.y()+b.z()*c.y()*d.x()
-        );
-
-        vec4 bary1 = vec4(
-          -b.x()*c.y()*d.z()+b.x()*c.z()*d.y()+b.y()*c.x()*d.z()-b.y()*c.z()*d.x()-b.z()*c.x()*d.y()+b.z()*c.y()*d.x(),
-          a.x()*c.y()*d.z()-a.x()*c.z()*d.y()-a.y()*c.x()*d.z()+a.y()*c.z()*d.x()+a.z()*c.x()*d.y()-a.z()*c.y()*d.x(),
-          -a.x()*b.y()*d.z()+a.x()*b.z()*d.y()+a.y()*b.x()*d.z()-a.y()*b.z()*d.x()-a.z()*b.x()*d.y()+a.z()*b.y()*d.x(),
-          a.x()*b.y()*c.z()-a.x()*b.z()*c.y()-a.y()*b.x()*c.z()+a.y()*b.z()*c.x()+a.z()*b.x()*c.y()-a.z()*b.y()*c.x()
-        );
-
-        vec4 bary2 = bary1 * det;
-
-        if (bary2.x() >= 0 && bary2.y() >= 0 && bary2.z() >= 0 && bary2.w() >= 0) {
-          //fprintf(file, "!! %d %d %d  %s\n", idx[0], idx[1], idx[2], (bary1/det).toString());
-          indices[0] = idx[0];
-          indices[1] = idx[1];
-          indices[2] = idx[2];
-          bary = bary1 / det;
-          return true;
-        }
+    /// Compute the axis aligned bounding box for this mesh in model space and set it.
+    void calc_aabb() {
+      unsigned num_vertices = get_num_vertices();
+      if (get_num_vertices() == 0) {
+        mesh_aabb = aabb();
+        return;
       }
-      //fclose(file);
-      //exit(1);
-      return false;
+
+      unsigned slot = get_slot(attribute_pos);
+      vec3 vmin = get_value(slot, 0).xyz();
+      vec3 vmax = vmin;
+      for (unsigned i = 1; i < num_vertices; ++i) {
+        vec3 pos = get_value(slot, i).xyz();
+        vmin = min(pos, vmin);
+        vmax = max(pos, vmin);
+      }
+      mesh_aabb = aabb((vmax + vmin) * 0.5f, (vmax - vmin) * 0.5f);
     }
 
-    // access the vbo or memory buffer
+    /// *very* slow ray cast.
+    /// returns "barycentric" coordinates.
+    /// eg. hit pos = bary[0] * pos0 + bary[1] * pos1 + bary[2] * pos2 (or ray.start + ray.distance * bary[3])
+    /// eg. hit uv = bary[0] * uv0 + bary[1] * uv1 + bary[2] * uv2
+    bool ray_cast(const ray &the_ray, int indices[], vec4 &bary_numer, float &bary_denom) {
+      unsigned pos_slot = get_slot(attribute_pos);
+      if (get_index_type() != GL_UNSIGNED_INT) return false;
+      if (get_size(pos_slot) < 3) return false;
+      if (get_kind(pos_slot) != GL_FLOAT) return false;
+
+      vec3 org = the_ray.get_start();
+      vec3 dir = the_ray.get_distance();
+      //log("ray_cast: org=%s dir=%s\n", org.toString(), dir.toString());
+
+      unsigned pos_offset = get_offset(pos_slot);
+      gl_resource::rolock idx_lock(get_indices());
+      gl_resource::rolock vtx_lock(get_vertices());
+      const uint32_t *idx = idx_lock.u32();
+      const uint8_t *vtx = vtx_lock.u8();
+
+      float best_denom = 0;
+      vec4 best_numer(0, 0, 0, 0);
+      for (unsigned i = 0; i != get_num_indices(); i += 3) {
+        vec3 a = (vec3)*(const vec3p*)(vtx + pos_offset + stride * idx[i+0]) - org;
+        vec3 b = (vec3)*(const vec3p*)(vtx + pos_offset + stride * idx[i+1]) - org;
+        vec3 c = (vec3)*(const vec3p*)(vtx + pos_offset + stride * idx[i+2]) - org;
+        vec3 d = dir;
+
+        // solve [ba, bb, bc, bd] * [[ax, ay, az, 1], [bx, by, bz, 1], [cx, cy, cz, 1], [-dx, -dy, -dz, 0]] = [0, 0, 0, 1]
+        //
+        // ie. ba + bb + bc = 1  and  ba * a + bb * b + bc * c = bd * d
+        //
+        // [ba, bb, bc] are barycentric coordinates, bd is the distance along the vector
+
+        // The last line of the inverse matrix is the solution (vector triple products)
+
+        // numerator
+        vec4 numer(
+          dot(cross(b, c), d),
+          dot(cross(c, a), d),
+          dot(cross(a, b), d),
+          dot(cross(a, b), c)
+        );
+
+        // denominator
+        float denom = numer[0] + numer[1] + numer[2];
+
+        //log("a=%s b=%s c=%s d=%s denom=%f\n", a.toString(), b.toString(), c.toString(), d.toString(), denom);
+        //log("numer=%s\n", numer.toString());
+        //log("res=%s\n", (numer / denom).toString());
+
+        // using a multiply lets us check the sign without using a divide.
+        vec4 bary2 = numer * denom;
+
+        if (all(bary2 >= vec4(0, 0, 0, 0))) {
+          rational best_distance(best_numer[3], best_denom);
+          rational new_distance(numer[3], denom);
+          /*printf(
+            "t%d %9.3f %d %d %d  %s %s %s\n",
+            i, numer[3]/denom, idx[i+0], idx[i+1], idx[i+2],
+            (numer/denom).toString(), best_distance.toString(), new_distance.toString()
+          );*/
+
+          unsigned further = new_distance > best_distance;
+          if (!further) {
+            indices[0] = idx[i+0];
+            indices[1] = idx[i+1];
+            indices[2] = idx[i+2];
+            best_numer = numer;
+            best_denom = denom;
+          }
+        }
+      }
+
+      if (fabsf(best_denom) < 1e-6f) {
+        bary_numer = vec4(0, 0, 0, 0);
+        bary_denom = 0;
+        return false;
+      } else {
+        bary_numer = best_numer;
+        bary_denom = best_denom;
+        return true;
+      }
+    }
+
+    /// access the vertex buffer (VBO) or memory buffer
     gl_resource *get_vertices() const {
       return vertices;
     }
 
-    // access the index buffer or memory buffer
+    /// access the index buffer (IBO) or memory buffer
     gl_resource *get_indices() const {
       return indices;
     }
 
-    // access the vbo or memory buffer
+    /// set a new VBO object
     void set_vertices(gl_resource *value) {
       vertices = value;
     }
 
-    // access the index buffer or memory buffer
+    /// set a new IBO object
     void set_indices(gl_resource *value) {
       indices = value;
     }
 
-    void get_edges(hash_map<uint64_t, unsigned> &edges) {
+    /// Get all the edges in a hash map to avoid duplicates.
+    /// record the triangle indices that they came from.
+    void get_edges(hash_map<uint64_t, uint64_t> &edges) {
+      if (get_index_type() != GL_UNSIGNED_INT) return;
+
+      gl_resource::rolock idx_lock(get_indices());
+      const uint32_t *ip = idx_lock.u32();
+
+      for (unsigned i = 0; i < get_num_indices(); i += 3) {
+        add_edge(edges, i, ip[i+0], ip[i+1]);
+        add_edge(edges, i, ip[i+1], ip[i+2]);
+        add_edge(edges, i, ip[i+2], ip[i+0]);
+      }
+    }
+
+    /// Generate silhouette edges.
+    /// Silhouette edges are used for shadows, highlighting and volumetric effects such as shadows.
+    /// the resulting indices could be used for a GL_LINES render, for example.
+    ///
+    /// An edge is a silhouette edge if:
+    ///
+    ///   There is only one triangle that uses the edge.
+    ///   One triangle can be seen from the viewpoint, the other can't.
+    void get_silhouette_edges(const vec3 &viewpoint, bool is_directional, dynarray<unsigned> &indices) {
+      unsigned pos_slot = get_slot(attribute_pos);
+      if (get_index_type() != GL_UNSIGNED_INT) return;
+      if (get_size(pos_slot) < 3) return;
+      if (get_kind(pos_slot) != GL_FLOAT) return;
+
+      unsigned pos_offset = get_offset(pos_slot);
+
+      hash_map<uint64_t, uint64_t> edges;
+      get_edges(edges);
+
+      gl_resource::rolock idx_lock(get_indices());
+      gl_resource::rolock vtx_lock(get_vertices());
+      const uint32_t *ip = idx_lock.u32();
+      const uint8_t *vp = vtx_lock.u8();
+      unsigned stride = get_stride();
+      
+      for (unsigned i = 0; i != edges.size(); ++i) {
+        if (edges.get_key(i)) {
+          uint64_t tris = edges.get_value(i);
+          uint32_t tri_a = (uint32_t)(tris) - 1;
+          uint32_t tri_b = (uint32_t)(tris >> 32) - 1;
+          assert(edges.get_value(i));
+          if (
+            tri_b == 0 ||
+            tri_is_visible(
+              tri_a, pos_offset, stride, ip, vp, viewpoint, is_directional
+            ) != tri_is_visible(
+              tri_b, pos_offset, stride, ip, vp, viewpoint, is_directional
+            )
+          ) {
+            uint64_t idxs = edges.get_value(i);
+            uint32_t idx_a = (uint32_t)idxs;
+            uint32_t idx_b = (uint32_t)(idxs >> 32);
+            indices.push_back(idx_a);
+            indices.push_back(idx_b);
+          }
+        }
+      }
     }
   };
-}
+}}

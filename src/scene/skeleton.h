@@ -8,7 +8,7 @@
 //
 // A mini scene heirachy for one actor.
 
-namespace octet {
+namespace octet { namespace scene {
   class skeleton : public resource {
     // skeleton components
     dynarray<mat4t> nodeToParents;
@@ -41,10 +41,11 @@ namespace octet {
       nodeToParents.push_back(node->get_nodeToParent());
       joints.push_back(node->get_sid());
       parents.push_back(parent);
-      app_utils::log("skeleton: add_bone %d [%s]\n", node->get_sid(), node->access_nodeToParent().toString());
+      //char tmp[256];
+      //log("skeleton: add_bone %d [%s]\n", node->get_sid(), node->access_nodeToParent().toString(tmp, sizeof(tmp)));
     }
 
-    int get_num_bones() const { return nodeToParents.size(); }
+    int get_num_bones() const { return result.size(); }
 
     int find_joint(atom_t sid) {
       for (unsigned i = 0; i != joints.size(); ++i) {
@@ -75,7 +76,7 @@ namespace octet {
         } else {
           boneToNode[i] = nodeToParents[i] * boneToNode[parent];
         }
-        //app_utils::log("%d %s p=%d\n", i, result[i].toString(), parent);
+        //log("%d %s p=%d\n", i, result[i].toString(), parent);
       }
 
       unsigned num_joints = skn->get_num_joints();
@@ -97,7 +98,7 @@ namespace octet {
         } else {
           result[i] = worldToCamera;
         }
-        //if (first_frame) app_utils::log("%d %d [%s]\n", i, index, result[i].toString());
+        //if (first_frame) log("%d %d [%s]\n", i, index, result[i].toString());
       }
 
       return &result[0];
@@ -115,4 +116,4 @@ namespace octet {
       nodeToParents[index] = value;
     }
   };
-}
+}}

@@ -7,23 +7,47 @@
 //
 
 namespace octet {
+  // this enum is used to avoid using strings in code and files
   enum atom_t {
     atom_, // null atom
     
     #define OCTET_ATOM(X) atom_##X,
     #include "atoms.h"
     #undef OCTET_ATOM
+
+    // put classes at a fixed offset to prevent older files becomming obsolete
+    atom_class_base = 0x10000,
+    #define OCTET_CLASS(C, X) atom_##X,
+    //#pragma message("app_utils.h")
+    #include "classes.h"
+    #undef OCTET_CLASS
   };
-  
+}
+
+namespace octet { namespace resources {
+  /// A set of utilities   
   class app_utils {
   public:
+    /// Set and get the file prefix. This is used to find resource files in the game.
     static const char *prefix(const char *new_prefix=NULL) {
       static const char *value = "../../";      if (new_prefix) {
         value = new_prefix;
       }
       return value;
     }
+
+    /// open a zip file for a given URL
+    static zip_file *get_zip_file(const char *url) {
+      static dictionary<ref<zip_file> > zip_files;
+      int index = zip_files.get_index(url);
+      if (index == -1) {
+        return zip_files[url] = new zip_file(get_path(url));
+      } else {
+        return zip_files.get_value(index);
+      }
+    }
   
+    /// utility function to set rgb values in a buffer.
     static void setrgb(dynarray<unsigned char> &buffer, int size, int x, int y, unsigned rgb, unsigned a = 0xff) {
       buffer[(y*size+x)*4+0] = rgb >> 16;
       buffer[(y*size+x)*4+1] = rgb >> 8;
@@ -31,7 +55,7 @@ namespace octet {
       buffer[(y*size+x)*4+3] = a;
     }
   
-    // turn a url into a file path
+    /// Convert a url into a file path.
     static const char *get_path(const char *url) {
       if (url == NULL) return "";
 
@@ -48,8 +72,20 @@ namespace octet {
       return path;
     }
 
+    /// Get a file into a buffer, given a URL.
     static void get_url(dynarray<unsigned char> &buffer, const char *url) {
-      if (!strncmp(url, "http://", 7)) {
+      if (!strncmp(url, "zip://", 6)) {
+        const char *zip = strstr(url + 6, ".zip");
+        if (zip) {
+          int path_len = (int)(zip - (url + 6) + 4);
+          string zip_url;
+          zip_url.set(url + 6, path_len);
+          const char *file = (url + 6) + path_len;
+          file += file[0] == '/';
+          zip_file *zip = get_zip_file(zip_url.c_str());
+          zip->get_file(buffer, file);
+        }
+      } else if (!strncmp(url, "http://", 7)) {
         // http
       } else {
         FILE *file = fopen(get_path(url), "rb");
@@ -65,6 +101,7 @@ namespace octet {
       }
     }
 
+    /// Generate a stock texture. To be deprecated.
     static GLuint get_stock_texture(unsigned gl_kind, const char *name) {
       //stock_texture_generator stock;
       if (!strcmp(name, "bricks")) {
@@ -107,6 +144,7 @@ namespace octet {
       }
     }
 
+    /// Generate a solid texture. to be deprecated.
     static GLuint get_solid_texture(unsigned gl_kind, const char *name) {
       dynarray<unsigned char>buffer(1*1*4);
       unsigned val = 0;
@@ -128,8 +166,8 @@ namespace octet {
       return make_texture(gl_kind, &buffer[0], buffer.size(), GL_RGBA, 1, 1);
     }
 
-    // utility function for making textures from arrays of bytes
-    // gl_kind is GL_RGB or GL_RGBA
+    /// Utility function for making textures from arrays of bytes.
+    /// gl_kind is GL_RGB or GL_RGBA
     static GLuint make_texture(unsigned gl_kind, uint8_t *image, unsigned size, unsigned in_format, unsigned width, unsigned height) {
       //assert(buffer.size() == width * height * 4);
       // make a new texture handle
@@ -146,6 +184,7 @@ namespace octet {
       return handle;
     }
 
+    /// Make an OpenAL sound buffer
     static ALuint make_sound_buffer(unsigned kind, unsigned rate, dynarray<unsigned char> &buffer, unsigned offset, unsigned size) {
       ALuint id = 0;
       alGenBuffers(1, &id);
@@ -153,26 +192,15 @@ namespace octet {
       return id;
     }
 
-    // write some text to log.txt
-    static FILE * log(const char *fmt, ...) {
-      static FILE *file;
-      va_list list;
-      va_start(list, fmt);
-      if (!file) file = fopen("log.txt", "w");
-      vfprintf(file, fmt, list);
-      va_end(list);
-      fflush(file);
-      return file;
-    }
-
+    /// Get the system atom dictionary. Atoms are unique names with an integer representation.
     static dictionary<atom_t> *get_atom_dict() {
       static dictionary<atom_t> *dict;
       if (!dict) dict = new dictionary<atom_t>();
       return dict;
     }
 
-    // get a unique int for a string.
-    // these values are much cheaper to work with than strings.
+    /// Get a unique int for a string (atom). Atoms are unique names with an integer representation.
+    /// These values are much cheaper to work with than strings.
     static atom_t get_atom(const char *name) {
       // the null name is 0
       if (name == 0 || name[0] == 0) {
@@ -188,16 +216,17 @@ namespace octet {
         }
       }
       if (dict->contains(name)) {
-        //app_utils::log("old atom %s %d\n", name, (*dict)[name]);
+        //log("old atom %s %d\n", name, (*dict)[name]);
         return (*dict)[name];
       } else {
-        //app_utils::log("new atom %s %d\n", name, num_atoms);
+        //log("new atom %s %d\n", name, num_atoms);
         return (*dict)[name] = (atom_t)num_atoms++;
       }
     }
 
+    /// Get the text of a predefined atom (atom_*)
     static const char *predefined_atom(unsigned i) {
-      static const char *names[] = {
+      static const char *atom_names[] = {
         "",
 
         #define OCTET_ATOM(X) #X,
@@ -205,13 +234,25 @@ namespace octet {
         #undef OCTET_ATOM
         NULL
       };
-      if (i < sizeof(names)/sizeof(names[0])-1) {
-        return names[i];
+      static const char *class_names[] = {
+        "",
+
+        #define OCTET_CLASS(N, X) #X,
+        //#pragma message("app_utils.h 2")
+        #include "classes.h"
+        #undef OCTET_CLASS
+        NULL
+      };
+      if (i < sizeof(atom_names)/sizeof(atom_names[0])-1) {
+        return atom_names[i];
+      } else if (i-(unsigned)atom_class_base < sizeof(class_names)/sizeof(class_names[0])-1) {
+        return class_names[i-(unsigned)atom_class_base];
       } else {
         return NULL;
       }
     }
 
+    /// Get the name of an atom, either predefined or user defined.
     static const char *get_atom_name(atom_t atom) {
       const char *name = predefined_atom((unsigned)atom);
       if (name) return name;
@@ -226,6 +267,5 @@ namespace octet {
       }
       return "???";
     }
-
   };
-}
+} }

@@ -10,9 +10,7 @@ namespace octet {
   // standard attribute names
   enum attribute {
     attribute_position = 0,
-    attribute_pos = 1,
-		attribute_player = 2,
-		attribute_type = 2,
+    attribute_pos = 0,
     attribute_blendweight = 1,
     attribute_normal = 2,
     attribute_diffuse = 3,
@@ -78,6 +76,7 @@ namespace octet {
     int viewport_y;
     int frame_number;
     bool is_gles3;
+    video_capture video_capture_;
 
     // queue of files to load
     dynarray<string> load_queue;
@@ -86,7 +85,7 @@ namespace octet {
     app_common() {
       // this memset writes 0 to every byte of keys[]
       memset(keys, 0, sizeof(keys));
-      mouse_x = mouse_y = 0;
+      mouse_x = mouse_y = mouse_wheel = 0;
       is_gles3 = false;
       frame_number = 0;
     }
@@ -94,10 +93,19 @@ namespace octet {
     virtual ~app_common() {
     }
 
-    virtual void draw_world(int x, int y, int w, int h, int xPos, int yPos) = 0;
+    virtual void draw_world(int x, int y, int w, int h) = 0;
     virtual void app_init() = 0;
-	virtual void motion(int x, int y, HWND* w) = 0;
-
+    
+    #ifdef __APPLE__
+    
+    virtual void motion(int x, int y) = 0;
+    
+    #elif defined(_WIN32) || defined(_WIN64)
+    
+		virtual void motion(int x, int y, HWND* w) {};
+    
+    #endif
+    
     // returns true if a key is down
     bool is_key_down(unsigned key) {
       return keys[key & 0xff] == 1;
@@ -129,6 +137,10 @@ namespace octet {
       return load_queue;
     }
 
+    video_capture *get_video_capture() {
+      return &video_capture_;
+    }
+
     // used by the platform to set a key
     void set_key(unsigned key, bool is_down) {
       keys[key & 0xff] = is_down ? 1 : 0;
@@ -146,8 +158,11 @@ namespace octet {
     }
 
     void set_viewport_size(int x, int y) {
-      viewport_x = x;
-      viewport_y = y;
+      // make the viewport size even, so the centre is always
+      // at the centre of a pixel.
+      viewport_x = x & ~1; // ie, clear the bottom bit.
+      viewport_y = y & ~1;
+      //printf("set_viewport_size: %03x %03x\n", viewport_x, viewport_y);
     }
 
     static bool can_use_vbos() {
@@ -161,5 +176,16 @@ namespace octet {
     void set_is_gles3(bool value) {
       is_gles3 = value;
     }
+
+    // use the allocator to allocate this resource and its child classes
+    void *operator new (size_t size) {
+      return allocator::malloc(size);
+    }
+
+    // use the allocator to free this resource and its child classes
+    void operator delete (void *ptr, size_t size) {
+      return allocator::free(ptr, size);
+    }
+
   };
 }

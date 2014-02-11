@@ -61,11 +61,12 @@ namespace octet {
     // initialiser (it is nice to keep the two separate for aggregate memory allocation)
     void init() {
       glutInitDisplayMode(GLUT_RGBA|GLUT_DEPTH|GLUT_DOUBLE);
-      glutInitWindowSize(500, 500);
+      glutInitWindowSize(1280, 720);
       window_handle = glutCreateWindow("glut window");
+      set_viewport_size(GLUT_WINDOW_WIDTH, GLUT_WINDOW_HEIGHT);
       map()[window_handle] = this;
       #ifdef WIN32
-        init_wgl();
+      init_wgl();
       #endif
       app_init();
     }
@@ -129,14 +130,16 @@ namespace octet {
     static void do_mouse(int x, int y) {
       //printf("%d %d\n", x, y);
       map()[glutGetWindow()]->set_mouse_pos(x, y);
+      map()[glutGetWindow()]->motion(x,y);
+      glutSetCursor(GLUT_CURSOR_NONE);
     }
 
     static void timer(int value) {
       glutTimerFunc(16, timer, 1);
       map_t &m = map();
       for (int i = 0; i != m.size(); ++i) {
-        if (m.key(i)) {
-          glutSetWindow(m.key(i));
+        if (m.get_key(i)) {
+          glutSetWindow(m.get_key(i));
           glutPostRedisplay();
         }
       }
@@ -160,8 +163,8 @@ namespace octet {
     static void run_all_apps() {
       map_t &m = map();
       for (int i = 0; i != m.size(); ++i) {
-        if (m.key(i)) {
-          glutSetWindow(m.key(i));
+        if (m.get_key(i)) {
+          glutSetWindow(m.get_key(i));
           glutDisplayFunc(display);
           glutReshapeFunc(reshape);
           glutKeyboardFunc(do_key_down);
@@ -169,8 +172,8 @@ namespace octet {
           glutSpecialFunc(do_special_down);
           glutSpecialUpFunc(do_special_up);
           glutMouseFunc(do_mouse_button);
-          glutMotionFunc(do_mouse);
-          glutPassiveMotionFunc(do_mouse);
+					glutMotionFunc(map()[glutGetWindow()]->motion());
+					glutPassiveMotionFunc(map()[glutGetWindow()]->motion());
         }
       }
       glutTimerFunc(16, timer, 1);
@@ -182,4 +185,37 @@ namespace octet {
       exit(1);
     }
   };
+
+  // dummy video capture class
+  /*class video_capture {
+  public:
+    video_capture() {
+    }
+
+    int open() {
+      return -1;
+    }
+
+    int read(void *buffer, unsigned max_size) {
+      return 0;
+    }
+
+    int close() {
+      return 0;
+    }
+
+    unsigned width() { return 0; }
+    unsigned height() { return 0; }
+    unsigned bits_per_pixel() { return 0; }
+    unsigned image_size() { return 0; }
+  };*/
+
+  // on ARM we can do this faster with the "rev" instruction
+  inline static unsigned rev16(unsigned value) {
+    value = ( ( value >> 1 ) & 0x5555 ) | ( ( value & 0x5555 ) << 1 );
+    value = ( ( value >> 2 ) & 0x3333 ) | ( ( value & 0x3333 ) << 2 );
+    value = ( ( value >> 4 ) & 0x0f0f ) | ( ( value & 0x0f0f ) << 4 );
+    value = ( ( value >> 8 ) & 0x00ff ) | ( ( value & 0x00ff ) << 8 );
+    return value;
+  }
 }

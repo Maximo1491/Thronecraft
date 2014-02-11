@@ -53,13 +53,13 @@ namespace octet {
       cameraToWorld.loadIdentity();
       cameraToWorld.translate(0, 0, 5);
 
-      //cube_mesh.make_cube();
+      cube_mesh.make_cube();
       //cube_mesh.make_cone();
       //cube_mesh.make_sphere();
 
-      diffuse = ambient = resources::get_texture_handle(GL_RGB, "!bricks");
-      emission = resources::get_texture_handle(GL_RGB, "#000000");
-      specular = resources::get_texture_handle(GL_RGB, "#ffffff");
+      diffuse = ambient = resource_dict::get_texture_handle(GL_RGB, "!bricks");
+      emission = resource_dict::get_texture_handle(GL_RGB, "#000000");
+      specular = resource_dict::get_texture_handle(GL_RGB, "#ffffff");
     }
 
     // this is called to draw the world

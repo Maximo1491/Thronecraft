@@ -7,7 +7,7 @@
 // Axis aligned bounding box
 //
 
-namespace octet {
+namespace octet { namespace math {
   // ray for casting of
   class ray {
     vec3 distance;
@@ -33,10 +33,11 @@ namespace octet {
       return ray((origin.xyz1() * mat).xyz(), (distance.xyz0() * mat).xyz());
     }
 
-    const char *toString() const {
-      static char tmp[256];
-      sprintf(tmp, "[%s, %s]", origin.toString(), distance.toString());
-      return tmp;
+    const char *toString(char *dest, size_t len) const {
+      static char tmp[64];
+      static char tmp2[64];
+      snprintf(dest, len, "[%s, %s]", origin.toString(tmp, sizeof(tmp)), distance.toString(tmp2, sizeof(tmp2)));
+      return dest;
     }
 
     // intersection tests
@@ -71,6 +72,16 @@ namespace octet {
       return all(can_hit_box & inside_edges);
     }
     
+    // ray-sphere is the same as capsule-point
+    bool intersects(sphere_in rhs) const {
+      vec3 diff = origin - rhs.get_center();
+      float radius2 = squared(rhs.get_radius());
+      float lambda = dot(diff, distance) / squared(distance);
+      float clamped = min(0.0f, max(lambda, 1.0f));
+      vec3 nearest_point = distance * clamped;
+      return squared(diff - distance) < radius2;
+    }
+    
     // return "a" for origin + distance * a
     rational intersection(const aabb &rhs) const {
       vec3 org = origin - rhs.get_center();
@@ -88,19 +99,23 @@ namespace octet {
       return min(ax, ay, az);
     }
 
-    vec3 get_start() {
+    vec3 get_start() const {
       return origin;
     }
 
-    vec3 get_end() {
+    vec3 get_end() const {
+      return origin + distance;
+    }
+
+    vec3 get_distance() const {
       return origin + distance;
     }
   };
 
-  inline void unit_test_ray() {
+  static inline void unit_test_ray() {
     aabb my_aabb(vec3(1, 1, 1), vec3(1, 2, 3));
     for (int i = 0; i != 360; i += 30) {
-      vec3 dist = vec3(cos(i*(3.131592653f/180))*4, sin(i*(3.131592653f/180))*4, 0);
+      vec3 dist = vec3(cos(i*(3.131592653f/180))*4.0f, sin(i*(3.131592653f/180))*4.0f, 0.0f);
       vec3 org = vec3(3, 1, 0);
       ray my_ray(org, dist);
       rational pt = my_ray.intersection(my_aabb);
@@ -108,5 +123,5 @@ namespace octet {
       printf("%d %12.7f [%12.7f %12.7f] [%12.7f %12.7f]\n", i, (float)pt, pt.numer(), pt.denom(), ipt.x(), ipt.y());
     }
   }
-}
+} }
 

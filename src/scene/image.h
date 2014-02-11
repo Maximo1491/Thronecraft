@@ -11,7 +11,8 @@
 // This simplifies shader design.
 //
 
-namespace octet {
+namespace octet { namespace scene {
+  /// Image from a file. Stored as an array of bytes for later conversion to GL resource.
   class image : public resource {
     // primary attributes (to save)
 
@@ -29,6 +30,7 @@ namespace octet {
     uint8_t cube_faces;
 
     // derived attributes (not for saving)
+    // todo: use gl_resource
     GLuint gl_texture;
 
     void init(const char *name) {
@@ -55,6 +57,7 @@ namespace octet {
       COMPRESSED_RGBA_S3TC_DXT5_EXT = 0x83F3,
     };
 
+    /// Make mipmaps for this image.
     void make_mipmaps() {
       if (format != RGB && format != RGBA) return;
 
@@ -89,6 +92,8 @@ namespace octet {
       //printf("%d %d\n", dest - &bytes[0], bytes.size());
     }
 
+    /// DXT encode the image, making it smaller and grainier.
+    /// Todo: do standard error-diffusion and other improvements.
     void dxt_encode() {
       if (format != RGB && format != RGBA) return;
 
@@ -103,7 +108,7 @@ namespace octet {
       unsigned new_mip_levels = 0;
       while (w > 4 && h > 4 && new_mip_levels < mip_levels) {
         for (unsigned y = 0; y < h/4; ++y) {
-          app_utils::log("w=%d y=%d src=%08x\n", w, y, src - &bytes[0]);
+          log("w=%d y=%d src=%08x\n", w, y, src - &bytes[0]);
           for (unsigned x = 0; x < w/4; ++x) {
             // ye olde covariance method http://en.wikipedia.org/wiki/Linear_discriminant_analysis
             vec4 tot(0, 0, 0, 0);
@@ -135,7 +140,7 @@ namespace octet {
             }
             float len = axis.length();
             if (abs(len) >= 0.001f) axis = axis / len;
-            if (y == 27) app_utils::log("%s %s %s\n", mean.toString(), axis.toString(), covariance.toString());
+            //if (y == 27) log("%s %s %s\n", mean.toString(), axis.toString(), covariance.toString(tmp, sizeof(tmp)));
 
             // our colours all have to live on the axis.
             // in practice, we can ignore "odd man out" colours
@@ -152,7 +157,7 @@ namespace octet {
             }
             vec4 cmin = mean + axis * pmin;
             vec4 cmax = mean + axis * pmax;
-            if (y == 27) app_utils::log("%s -> %s\n", cmin.toString(), cmax.toString());
+            //if (y == 27) log("%s -> %s\n", cmin.toString(), cmax.toString(tmp, sizeof(tmp)));
             cmin = min(max(cmin, vec4(0, 0, 0, 0)), vec4(1, 1, 1, 1));
             cmax = min(max(cmax, vec4(0, 0, 0, 0)), vec4(1, 1, 1, 1));
 
@@ -204,19 +209,31 @@ namespace octet {
   public:
     RESOURCE_META(image)
 
-    // default constructor makes a blank image.
+    /// default constructor makes a blank image.
     image() {
       init("");
     }
 
+    /// give url of file to load.
     image(const char *name) {
       init(name);
     }
 
+    /// release resources.
     ~image() {
     }
 
-    // access attributes by name
+    /// width in pixels
+    unsigned get_width() const {
+      return width;
+    }
+
+    /// height in pixels
+    unsigned get_height() const {
+      return height;
+    }
+
+    /// access attributes by name
     void visit(visitor &v) {
       v.visit(url, atom_url);
       v.visit(bytes, atom_bytes);
@@ -227,7 +244,7 @@ namespace octet {
       v.visit(cube_faces, atom_cube_faces);
     }
 
-    // load the image from a file
+    /// load the image from a url
     void load() {
       dynarray<uint8_t> buffer;
       app_utils::get_url(buffer, url);
@@ -254,6 +271,7 @@ namespace octet {
       //dxt_encode();
     }
 
+    /// get the OpenGL texture handle for this image.
     GLuint get_gl_texture() {
       if (!gl_texture) {
         if (bytes.size() == 0 || width == 0 || height == 0) {
@@ -309,5 +327,5 @@ namespace octet {
       return gl_texture;
     }
   };
-}
+}}
 

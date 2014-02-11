@@ -4,10 +4,10 @@
 //
 // Modular Framework for OpenGLES2 rendering on multiple platforms.
 //
-// Animation resource
-//
 
-namespace octet {
+namespace octet { namespace scene {
+  /// Animation resource: Contains times and values.
+  /// Still a work in progress. Requires splines, compression, blending etc.
   class animation : public resource {
     // todo: this could be a GL/CL buffer
     dynarray<unsigned char> data;
@@ -34,10 +34,12 @@ namespace octet {
   public:
     RESOURCE_META(animation)
   
+    /// Default constructor. Use add_channel to add channels to the animation,
     animation() {
       end_time = 0;
     }
 
+    /// Serialisation, script etc.
     void visit(visitor &v) {
       v.visit(data, atom_data);
       v.visit(channels, atom_channels);
@@ -45,30 +47,37 @@ namespace octet {
       v.visit(end_time, atom_end_time);
     }
 
+    /// How many channels?
     int get_num_channels() const {
       return (int)channels.size();
     }
 
+    /// get the sid of a channel. Eg. "thigh" in thigh.rotation.x
     atom_t get_sid(int ch) const {
       return channels[ch].sid;
     }
 
+    /// get the sid of the sub target. eg. "angle" in thigh.rotation.x
     atom_t get_sub_target(int ch) const {
       return channels[ch].sub_target;
     }
 
+    /// get the component. eg. "x" in thigh.rotation.x
     atom_t get_component(int ch) const {
       return channels[ch].component;
     }
 
+    /// which resource are we targeting?
     resource *get_target(int ch) const {
       return targets[ch];
     }
 
+    /// how long is the animation?
     float get_end_time() const {
       return end_time;
     }
 
+    /// add a channel to the animation.
     // just store the floats in the channel for now.
     // todo: optimise animation data
     void add_channel(resource *target, atom_t sid, atom_t sub_target, atom_t component, dynarray<float> &times, dynarray<float> &values) {
@@ -98,8 +107,7 @@ namespace octet {
       targets.push_back(target);
     }
 
-    // evaluate one channel at one time - very inefficient.
-    // time is in ms.
+    /// Evaluate one channel. Time is in ms. This is very inefficient, it is much better to evalaute all channels together.
     void eval_chan(int chan, float time, resource *target) const {
       int time_ms = int(time * 1000);
       const channel &ch = channels[chan];
@@ -107,7 +115,7 @@ namespace octet {
       unsigned a = 0;
       unsigned b = ch.num_times - 1;
       unsigned component_size = ch.component_size;
-      //app_utils::log("ec %f %d\n", time, time_ms);
+      //log("ec %f %d\n", time, time_ms);
 
       if (time_ms < p[0]) {
         time_ms = p[0];
@@ -125,7 +133,7 @@ namespace octet {
         }
       }
 
-      //app_utils::log("t=%d a=%d b=%d p[a]=%d p[b]=%d\n", time_ms, a, b, p[a], p[b]);
+      //log("t=%d a=%d b=%d p[a]=%d p[b]=%d\n", time_ms, a, b, p[a], p[b]);
 
       unsigned data_offset = ch.offset + ch.num_times * sizeof(unsigned short);
 
@@ -138,9 +146,9 @@ namespace octet {
         for (int i = 0; i != component_size/4; ++i) {
           tmp1[i] = tmp1[i] * (1-t) + tmp2[i] * t;
         }
-        //app_utils::log("  t=%f %f %f %f\n", t, tmp1[0], tmp1[1], tmp1[2]);
+        //log("  t=%f %f %f %f\n", t, tmp1[0], tmp1[1], tmp1[2]);
         target->set_value(ch.sid, ch.sub_target, ch.component, tmp1);
       }
     }
   };
-}
+}}

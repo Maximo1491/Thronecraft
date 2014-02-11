@@ -7,7 +7,9 @@
 // visitor for writing xml files.
 //
 
-namespace octet {
+namespace octet { namespace resources {
+  /// Work in progress: serialise an octet tree to write as an XML file.
+  /// This is useful for debugging, for example.
   class xml_writer : public visitor {
     dynarray<TiXmlElement *> stack;
     TiXmlElement *root;
@@ -29,6 +31,7 @@ namespace octet {
       return tmp;
     }
   public:
+    /// create a new XML file in the tiny xml document, root.
     xml_writer(TiXmlElement *root) {
       next_id = 1;
       stack.push_back(root);
@@ -112,12 +115,14 @@ namespace octet {
     }
 
     void visit(vec4 &value, atom_t sid) {
-      stack.back()->SetAttribute(app_utils::get_atom_name(sid), value.toString());
+      char tmp[64];
+      stack.back()->SetAttribute(app_utils::get_atom_name(sid), value.toString(tmp, sizeof(tmp)));
     }
 
     void visit(mat4t &value, atom_t sid) {
-      stack.back()->SetAttribute(app_utils::get_atom_name(sid), value.toString());
+      char tmp[256];
+      stack.back()->SetAttribute(app_utils::get_atom_name(sid), value.toString(tmp, sizeof(tmp)));
     }
   };
-}
+} }
 

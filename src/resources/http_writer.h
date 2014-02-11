@@ -7,7 +7,8 @@
 // visitor for fetching the game world to a web browser
 // This visitor writes the JSON format required by jquery.jstree.js
 
-namespace octet {
+namespace octet { namespace resources {
+  /// Visitor to serialize game data to JSON format for use by web browsers.
   class http_writer : public visitor {
     hash_map<void *, int> refs;
     int next_id;
@@ -36,6 +37,7 @@ namespace octet {
       return response.back();
     }
   public:
+    /// Use as a visitor to generate response text for game data
     http_writer(int depth_, int max_depth_, dynarray<string> &response_) : response(response_) {
       depth = depth_;
       max_depth = max_depth_;
@@ -91,6 +93,7 @@ namespace octet {
 
     void visit_bin(void *value, size_t size, atom_t sid, atom_t type) {
       string data;
+      char tmp[256];
       switch (type) {
         case atom_int8: data.format("%d", *(int8_t*)value); break;
         case atom_int16: data.format("%d", *(int16_t*)value); break;
@@ -98,8 +101,8 @@ namespace octet {
         case atom_uint8: data.format("%d", *(uint8_t*)value); break;
         case atom_uint16: data.format("%d", *(uint16_t*)value); break;
         case atom_uint32: data.format("%u", *(uint32_t*)value); break;
-        case atom_mat4t: data.format("%s", ((mat4t*)value)->toString()); break;
-        case atom_vec4: data.format("%s", ((vec4*)value)->toString()); break;
+        case atom_mat4t: data.format("%s", ((mat4t*)value)->toString(tmp, sizeof(tmp))); break;
+        case atom_vec4: data.format("%s", ((vec4*)value)->toString(tmp, sizeof(tmp))); break;
         case atom_atom: data.format("%s", app_utils::get_atom_name(*(atom_t*)value)); break;
         default: {
           if (size <= 128) {
@@ -112,5 +115,5 @@ namespace octet {
       next().format("%*s{ \"data\": \"%s\", children: [\"%s\"] },\n", depth*2, "", app_utils::get_atom_name(sid), data.c_str());
     }
   };
-}
+} }
 
