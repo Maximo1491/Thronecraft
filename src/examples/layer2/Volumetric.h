@@ -31,6 +31,8 @@ namespace octet
 		uint8_t selectedBlock;
 		float current_block_position;
 		bool gravity;
+		bool jumping;
+		float jumpStr;
 
 		int chunksX, chunksY, chunksZ;
 
@@ -928,7 +930,8 @@ namespace octet
 
 		void playing_keyboard_controls()
 		{
-			const float movespeed = 0.5f;
+			const float movespeed = 0.25f;
+			float jumpspeed = 1.1f;
 
 			glm::vec3 forward_dir = glm::vec3(sinf(angles.x), 0, cosf(angles.x));
 			glm::vec3 right_dir = glm::vec3(-forward_dir.z, 0, forward_dir.x);
@@ -937,34 +940,81 @@ namespace octet
 			glm::vec3 temp_s;
 			glm::vec3 temp_d;
 
-			if (is_key_down('A'))
-				//temp_a = position - (right_dir * (movespeed * 3));
-			//if (c->get((int)glm::floor(temp_a.x), (int)glm::floor(temp_a.y), (int)glm::floor(temp_a.z)) == 0)
-			{
-				position -= right_dir * movespeed;
+			if (is_key_down('A')){
+				if (gravity == true)
+				{
+					temp_a = position - (right_dir * (movespeed * 3));
+					if (c->get((int)glm::floor(temp_a.x), (int)glm::floor(temp_a.y - 2.0), (int)glm::floor(temp_a.z)) == 0)
+					{
+						position -= right_dir * movespeed;
+					}
+				}
+				if (gravity == false)
+				{
+					position -= right_dir * (movespeed * 2.0f);
+				}
 			}
-			if (is_key_down('D'))
-				//temp_d = position + (right_dir * (movespeed * 3));
-			//if (c->get((int)glm::floor(temp_d.x), (int)glm::floor(temp_d.y), (int)glm::floor(temp_d.z)) == 0)
-			{
-				position += right_dir * movespeed;
+			if (is_key_down('D')){
+				
+				if (gravity == true)
+				{
+					temp_d = position + (right_dir * (movespeed * 3));
+					if (c->get((int)glm::floor(temp_d.x), (int)glm::floor(temp_d.y - 2.0), (int)glm::floor(temp_d.z)) == 0)
+					{
+						position += right_dir * movespeed;
+					}
+				}
+				if (gravity == false)
+				{
+					position += right_dir * (movespeed * 2.0f);
+				}
 			}
-			if (is_key_down('W'))
-				//temp_w = position + (forward_dir * (movespeed * 3));
-			//if (c->get((int)glm::floor(temp_w.x), (int)glm::floor(temp_w.y), (int)glm::floor(temp_w.z)) == 0)
-			{
-				position += forward_dir * movespeed;
+			if (is_key_down('W')){
+				
+				if (gravity == true)
+				{
+					temp_w = position + (forward_dir * (movespeed * 3));
+					if (c->get((int)glm::floor(temp_w.x), (int)glm::floor(temp_w.y - 2.0), (int)glm::floor(temp_w.z)) == 0)
+					{
+						position += forward_dir * movespeed;
+					}
+				}
+				if (gravity == false)
+				{
+					position += forward_dir * (movespeed * 2.0f) ;
+				}
 			}
-			if (is_key_down('S'))
-				//temp_s = position - (forward_dir * (movespeed * 3));
-			//if (c->get((int)glm::floor(temp_s.x), (int)glm::floor(temp_s.y), (int)glm::floor(temp_s.z)) == 0)
-			{
-				position -= forward_dir * movespeed;
+			if (is_key_down('S')){
+				
+				if (gravity == true)
+				{
+					temp_s = position - (forward_dir * (movespeed * 3));
+					if (c->get((int)glm::floor(temp_s.x), (int)glm::floor(temp_s.y - 2.0f), (int)glm::floor(temp_s.z)) == 0)
+					{
+						position -= forward_dir * movespeed;
+					}
+				}
+				if (gravity == false)
+				{
+					position -= forward_dir * (movespeed * 2.0f);
+				}
 			}
 			if (is_key_down('Q'))
-				position.y += movespeed;
-			if (is_key_down('E'))
-				position.y -= movespeed;
+			{
+				if (gravity == false){
+					position.y += movespeed;
+				}
+				if (gravity == true && jumping == false){
+						position.y += jumpspeed;
+						jumpStr += 5.0f;
+				}
+			}
+			if (is_key_down('E')){
+				if (gravity == false){
+					position.y -= movespeed;
+				}
+			}
+
 			if (is_key_down('O'))
 			{
 				set_key('O', false);
@@ -1212,10 +1262,23 @@ namespace octet
 		void update_player()
 		{
 			if (position.x > 0 && position.x < CX * SCX && position.z > 0 && position.z < CZ * SCZ)
-				if (c->get((int)(glm::floor(position.x)), (int)(glm::floor(position.y - 1.0f)), (int)(glm::floor(position.z))) == 0 && gravity == true)
-					position.y -= 0.6f;
-		}
+			{
+				if (c->get((int)(glm::floor(position.x)), (int)(glm::floor(position.y - 3.0f)), (int)(glm::floor(position.z))) == 0 && gravity == true)
+				{
+					position.y -= 0.8f;
+				}
+				else if (c->get((int)(glm::floor(position.x)), (int)(glm::floor(position.y - 3.0f)), (int)(glm::floor(position.z))) != 0 && gravity == true)
+				{
+					jumping = false;
+					jumpStr = 0.0f;
+				}
+			}
 
+			if (jumpStr >= 100.0f) //how high the player can jump
+			{
+				jumping = true;
+			}
+		}
 		void draw_world(int x, int y, int width, int height)
 		{
 			//Sets our viewpoint
@@ -1236,6 +1299,8 @@ namespace octet
 				//player position & gravity
 				position = glm::vec3(176, 100, 176);
 				gravity = false;
+				jumping = true;
+				jumpStr = 0.0f;
 
 				//Sound
 				if (!menuMusicPlaying)
