@@ -4,12 +4,14 @@
 
 class Sound
 {
-	ALuint sound[8];
+	ALuint sound[2];
+	ALuint music[3];
 
 	ALCdevice* device;
 	ALCcontext* context;
-	ALuint musicSource, constructionSound;
 	float backgroundGain;
+
+	bool dayPlaying;
 
 	struct RIFF_Header
 	{
@@ -40,21 +42,19 @@ public:
 	Sound()
 	{
 		backgroundGain = 0.1f;
+		dayPlaying = true;
 
 		device = alcOpenDevice(0);
 		context = alcCreateContext(device, 0);
 
 		alcMakeContextCurrent (context);
 
-		sound[0] = LoadWavFile ("../../assets/volumetric/audio/effects/sound1.wav", 1.0f, 1.0f, AL_FALSE);
-		sound[1] = LoadWavFile ("../../assets/volumetric/audio/effects/sound2.wav", 1.0f, 1.0f, AL_FALSE);
-		sound[2] = LoadWavFile ("../../assets/volumetric/audio/effects/sound3.wav", 1.0f, 1.0f, AL_FALSE);
-		sound[3] = LoadWavFile ("../../assets/volumetric/audio/effects/sound4.wav", 1.0f, 1.0f, AL_FALSE);
-		sound[4] = LoadWavFile ("../../assets/volumetric/audio/effects/sound5.wav", 1.0f, 1.0f, AL_FALSE);
-		sound[5] = LoadWavFile ("../../assets/volumetric/audio/effects/sound6.wav", 1.0f, 1.0f, AL_FALSE);
-		sound[6] = LoadWavFile ("../../assets/volumetric/audio/effects/sound7.wav", 1.0f, 1.0f, AL_FALSE);
-		sound[7] = LoadWavFile ("../../assets/volumetric/audio/effects/sound8.wav", 1.0f, 1.0f, AL_FALSE);
-		sound[8] = LoadWavFile ("../../assets/volumetric/audio/effects/sound9.wav", 1.0f, 1.0f, AL_FALSE);
+		sound[0] = LoadWavFile ("../../assets/volumetric/audio/effects/sound11a.wav", 1.0f, 1.0f, AL_FALSE);
+		sound[1] = LoadWavFile ("../../assets/volumetric/audio/effects/sound7.wav", 1.0f, 1.0f, AL_FALSE);
+
+		music[0] = LoadWavFile ("../../assets/volumetric/audio/music/day1.wav", 0.0f, 1.0f, AL_TRUE);
+		music[1] = LoadWavFile ("../../assets/volumetric/audio/music/night1.wav", 0.0f, 1.0f, AL_TRUE);
+		music[2] = LoadWavFile ("../../assets/volumetric/audio/music/menu music1.wav", 1.0f, 1.0f, AL_TRUE);
 	}
 
 	~Sound()
@@ -68,26 +68,54 @@ public:
 		alSourcePlay(sound[index]);
 	}
 
-	void PlayConstructionSound()
-	{
-		alSourcePlay(constructionSound);
-	}
-
 	void PlayMusic()
 	{
-		alSourcePlay(musicSource);
+		alSourcePlay (music[0]);
+		alSourcePlay (music[1]);
+	}
+
+	void StopMusic()
+	{
+		alSourceStop (music[0]);
+		alSourceStop (music[1]);
+	}
+
+	void PlayMenuMusic()
+	{
+		alSourcePlay (music[2]);
+	}
+
+	void StopMenuMusic()
+	{
+		alSourceStop (music[2]);
 	}
 
 	void AdjustBackground(const float &value)
 	{
-		backgroundGain = value;
+		if (backgroundGain != value)
+		{
+			backgroundGain = value;
 
-		if (backgroundGain < 0.0f)
-			backgroundGain = 0.0f;
-		else if (backgroundGain > 1.0f)
-			backgroundGain = 1.0f;
+			if (backgroundGain < 0.0f)
+				backgroundGain = 0.0f;
+			else if (backgroundGain > 1.0f)
+				backgroundGain = 1.0f;
 
-		alSourcef(musicSource, AL_GAIN, backgroundGain);
+			if (dayPlaying)
+				alSourcef (music[0], AL_GAIN, backgroundGain);
+			else
+				alSourcef (music[1], AL_GAIN, backgroundGain);
+		}
+	}
+
+	void setDayPlaying (const bool value)
+	{
+		dayPlaying = value;
+	}
+
+	float GetBackgroundGain ()
+	{
+		return backgroundGain;
 	}
 
 private:

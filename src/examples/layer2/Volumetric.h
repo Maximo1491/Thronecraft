@@ -36,11 +36,22 @@ namespace octet
 
 		int mouseX, mouseY;
 
+		//Sound
 		Sound soundEngine;
+		bool musicPlaying, menuMusicPlaying;
+		bool dayTime;
+		//Sound End
 
 		int intScan;
 		FILE* file;
 
+		//Sound
+		enum{
+			placing,
+			breaking,
+		};
+		//End Sound
+		
 		enum{
 			empty,
 			grass,
@@ -139,6 +150,12 @@ namespace octet
 			//Initialize the timer.
 			oldTime = clock();
 			skyTimer = 0.0f;
+
+			//Sound Items
+			dayTime = true;
+			musicPlaying = false;
+			menuMusicPlaying = false;
+			//Sound
 
 			//Get window width and height for UI elements
 			get_viewport_size(windowWidth, windowHeight);
@@ -458,6 +475,10 @@ namespace octet
 				if (c->get((int)end.x, (int)end.y, (int)end.z) != 0)
 				{
 					c->set((int)end.x, (int)end.y, (int)end.z, 0);
+
+					//Sound
+					soundEngine.PlaySound (placing);
+					//Sound End
 				}
 			}
 
@@ -533,6 +554,9 @@ namespace octet
 				if (x > -1 && x < CX * SCX && y > -1 && y < CY * SCY && z > -1 && z < CZ * SCZ && c->get((int)end.x, (int)end.y, (int)end.z) == 0)
 				{
 					c->set((int)end.x, (int)end.y, (int)end.z, selectedBlock);
+
+					//Sound
+					soundEngine.PlaySound (breaking);
 				}
 			}
 		}
@@ -619,56 +643,48 @@ namespace octet
 				set_key('1', false);
 				ui.setPos(ui_current_block_background, current_block_position + ((float)(grass - 1) * 60.0f), (float)windowHeight - 75.0f);
 				selectedBlock = grass;
-				soundEngine.PlaySound (0);
 			}
 			if (is_key_down('2')) // dirt
 			{
 				set_key('2', false);
 				ui.setPos(ui_current_block_background, current_block_position + ((float)(dirt - 1) * 60.0f), (float)windowHeight - 75.0f);
 				selectedBlock = dirt;
-				soundEngine.PlaySound (1);
 			}
 			if (is_key_down('3')) // stone
 			{
 				set_key('3', false);
 				ui.setPos(ui_current_block_background, current_block_position + ((float)(stone - 1) * 60.0f), (float)windowHeight - 75.0f);
 				selectedBlock = stone;
-				soundEngine.PlaySound (2);
 			}
 			if (is_key_down('4')) // wood
 			{
 				set_key('4', false);
 				ui.setPos(ui_current_block_background, current_block_position + ((float)(wood - 1) * 60.0f), (float)windowHeight - 75.0f);
 				selectedBlock = wood;
-				soundEngine.PlaySound (3);
 			}
 			if (is_key_down('5')) // leaves
 			{
 				set_key('5', false);
 				ui.setPos(ui_current_block_background, current_block_position + ((float)(leaves - 1) * 60.0f), (float)windowHeight - 75.0f);
 				selectedBlock = leaves;
-				soundEngine.PlaySound (4);
 			}
 			if (is_key_down('6')) // snow
 			{
 				set_key('6', false);
 				ui.setPos(ui_current_block_background, current_block_position + ((float)(snow - 1) * 60.0f), (float)windowHeight - 75.0f);
 				selectedBlock = snow;
-				soundEngine.PlaySound (5);
 			}
 			if (is_key_down('7')) // sand
 			{
 				set_key('7', false);
 				ui.setPos(ui_current_block_background, current_block_position + ((float)(sand - 1) * 60.0f), (float)windowHeight - 75.0f);
 				selectedBlock = sand;
-				soundEngine.PlaySound (6);
 			}
 			if (is_key_down('8')) // brick
 			{
 				set_key('8', false);
 				ui.setPos(ui_current_block_background, current_block_position + ((float)(brick - 1) * 60.0f), (float)windowHeight - 75.0f);
 				selectedBlock = brick;
-				soundEngine.PlaySound (7);
 			}
 			if (is_key_down(key_backspace)){
 				gravity = !gravity;
@@ -678,7 +694,6 @@ namespace octet
 			if (is_key_down(key_space))
 			{
 				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-				soundEngine.PlaySound (8);
 			}
 			else
 				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -805,6 +820,11 @@ namespace octet
 				if(is_key_down(key_lmb)){ 
 				set_key(key_lmb, false);
 				playState = start;
+
+				//Sound
+				soundEngine.AdjustBackground (0.0f);
+				soundEngine.PlayMenuMusic();
+				//Sound End
 				}
 			}
 			else if (pauseScreen.hover(ps_cancel, mouseX, mouseY))
@@ -852,9 +872,17 @@ namespace octet
 				position = glm::vec3(176, 100, 176);
 				gravity = false;
 
+				//Sound
+				if (!menuMusicPlaying)
+				{
+					soundEngine.PlayMenuMusic();
+					menuMusicPlaying = true;
+				}
+				//Sound End
 			}
 			else if (playState == cleanLoading)
 			{
+				soundEngine.StopMenuMusic();
 				ShowCursor(false);
 				loadScreen.render(ui_shader_);
 
@@ -919,6 +947,14 @@ namespace octet
 			{
 				clock_t newTime = clock();
 
+				//Sound
+				if (!musicPlaying)
+				{
+					musicPlaying = true;
+					soundEngine.PlayMusic();
+				}
+				//Sound End
+
 				skyTimer = (float)((double)newTime - (double)oldTime) / CLOCKS_PER_SEC;
 				light_angle += skyTimer * 3.0f;
 
@@ -926,6 +962,45 @@ namespace octet
 
 				if (light_angle > 180.0f)
 					light_angle -= 360.0f;
+
+				//Sound
+				float abs_light_angle = abs (light_angle);
+
+				if ((light_angle < 10.0f && light_angle > 0.0f) || (light_angle > 170.0f && light_angle < 180.0f))
+				{
+					if (!dayTime)
+					{
+						soundEngine.AdjustBackground (0.0f);
+						dayTime = true;
+						soundEngine.setDayPlaying (dayTime);
+					}
+
+					if (abs_light_angle > 170.0f)
+						abs_light_angle = 180.0f - abs_light_angle;
+
+					float diff = abs_light_angle / 10.0f;
+					soundEngine.AdjustBackground (diff);
+				}
+
+				else if ((light_angle > -10.0f && light_angle < 0.0f)  || (light_angle < -170.0f && light_angle > -180.0f))
+				{
+					if (dayTime)
+					{
+						soundEngine.AdjustBackground (0.0f);
+						dayTime = false;
+						soundEngine.setDayPlaying (dayTime);
+					}
+
+					if (abs_light_angle > 170.0f)
+						abs_light_angle = 180.0f - abs_light_angle;
+
+					float diff = abs_light_angle / 10.0f;
+					soundEngine.AdjustBackground (diff);
+				}
+
+				else
+					soundEngine.AdjustBackground (1.0f);
+				//Sound End
 
 				light_information[0] = glm::vec4(cos(light_angle * 0.0174532925f) * 0.75f, sin(light_angle * 0.0174532925f), cos(light_angle * 0.0174532925f) * 0.25f, 0.0f);
 
