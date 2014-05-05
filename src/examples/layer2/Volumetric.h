@@ -619,48 +619,56 @@ namespace octet
 				set_key('1', false);
 				ui.setPos(ui_current_block_background, current_block_position + ((float)(grass - 1) * 60.0f), (float)windowHeight - 75.0f);
 				selectedBlock = grass;
+				soundEngine.PlaySound (0);
 			}
 			if (is_key_down('2')) // dirt
 			{
 				set_key('2', false);
 				ui.setPos(ui_current_block_background, current_block_position + ((float)(dirt - 1) * 60.0f), (float)windowHeight - 75.0f);
 				selectedBlock = dirt;
+				soundEngine.PlaySound (1);
 			}
 			if (is_key_down('3')) // stone
 			{
 				set_key('3', false);
 				ui.setPos(ui_current_block_background, current_block_position + ((float)(stone - 1) * 60.0f), (float)windowHeight - 75.0f);
 				selectedBlock = stone;
+				soundEngine.PlaySound (2);
 			}
 			if (is_key_down('4')) // wood
 			{
 				set_key('4', false);
 				ui.setPos(ui_current_block_background, current_block_position + ((float)(wood - 1) * 60.0f), (float)windowHeight - 75.0f);
 				selectedBlock = wood;
+				soundEngine.PlaySound (3);
 			}
 			if (is_key_down('5')) // leaves
 			{
 				set_key('5', false);
 				ui.setPos(ui_current_block_background, current_block_position + ((float)(leaves - 1) * 60.0f), (float)windowHeight - 75.0f);
 				selectedBlock = leaves;
+				soundEngine.PlaySound (4);
 			}
 			if (is_key_down('6')) // snow
 			{
 				set_key('6', false);
 				ui.setPos(ui_current_block_background, current_block_position + ((float)(snow - 1) * 60.0f), (float)windowHeight - 75.0f);
 				selectedBlock = snow;
+				soundEngine.PlaySound (5);
 			}
 			if (is_key_down('7')) // sand
 			{
 				set_key('7', false);
 				ui.setPos(ui_current_block_background, current_block_position + ((float)(sand - 1) * 60.0f), (float)windowHeight - 75.0f);
 				selectedBlock = sand;
+				soundEngine.PlaySound (6);
 			}
 			if (is_key_down('8')) // brick
 			{
 				set_key('8', false);
 				ui.setPos(ui_current_block_background, current_block_position + ((float)(brick - 1) * 60.0f), (float)windowHeight - 75.0f);
 				selectedBlock = brick;
+				soundEngine.PlaySound (7);
 			}
 			if (is_key_down(key_backspace)){
 				gravity = !gravity;
@@ -668,7 +676,10 @@ namespace octet
 			}
 
 			if (is_key_down(key_space))
+			{
 				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+				soundEngine.PlaySound (8);
+			}
 			else
 				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
@@ -678,7 +689,6 @@ namespace octet
 				ShowCursor(true);
 
 				set_key(key_esc, false);
-				soundEngine.PlayWhooshSound();
 			}
 
 			glm::vec3 lookat;

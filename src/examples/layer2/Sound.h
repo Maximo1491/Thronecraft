@@ -4,7 +4,7 @@
 
 class Sound
 {
-	ALuint whoosh, land;
+	ALuint sound[8];
 
 	ALCdevice* device;
 	ALCcontext* context;
@@ -46,7 +46,15 @@ public:
 
 		alcMakeContextCurrent (context);
 
-		whoosh = LoadWavFile ("../../assets/volumetric/audio/music/day1.wav", 1.0f, 1.0f, AL_FALSE);
+		sound[0] = LoadWavFile ("../../assets/volumetric/audio/effects/sound1.wav", 1.0f, 1.0f, AL_FALSE);
+		sound[1] = LoadWavFile ("../../assets/volumetric/audio/effects/sound2.wav", 1.0f, 1.0f, AL_FALSE);
+		sound[2] = LoadWavFile ("../../assets/volumetric/audio/effects/sound3.wav", 1.0f, 1.0f, AL_FALSE);
+		sound[3] = LoadWavFile ("../../assets/volumetric/audio/effects/sound4.wav", 1.0f, 1.0f, AL_FALSE);
+		sound[4] = LoadWavFile ("../../assets/volumetric/audio/effects/sound5.wav", 1.0f, 1.0f, AL_FALSE);
+		sound[5] = LoadWavFile ("../../assets/volumetric/audio/effects/sound6.wav", 1.0f, 1.0f, AL_FALSE);
+		sound[6] = LoadWavFile ("../../assets/volumetric/audio/effects/sound7.wav", 1.0f, 1.0f, AL_FALSE);
+		sound[7] = LoadWavFile ("../../assets/volumetric/audio/effects/sound8.wav", 1.0f, 1.0f, AL_FALSE);
+		sound[8] = LoadWavFile ("../../assets/volumetric/audio/effects/sound9.wav", 1.0f, 1.0f, AL_FALSE);
 	}
 
 	~Sound()
@@ -55,14 +63,9 @@ public:
 	}
 
 	
-	void PlayWhooshSound()
+	void PlaySound (const int index)
 	{
-		alSourcePlay(whoosh);
-	}
-
-	void PlayLandSound()
-	{
-		alSourcePlay(land);
+		alSourcePlay(sound[index]);
 	}
 
 	void PlayConstructionSound()
