@@ -1329,7 +1329,7 @@ namespace octet
 					light_angle -= 360.0f;
 
 				//Sound
-				float maxVolume = 0.7f;
+				float maxVolume = 0.5f;
 				float abs_light_angle = abs (light_angle);
 
 				if ((light_angle < 10.0f && light_angle > 0.0f) || (light_angle > 170.0f && light_angle < 180.0f))
