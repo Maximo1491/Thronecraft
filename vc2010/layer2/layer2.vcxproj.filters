@@ -433,6 +433,9 @@
     <ClInclude Include="..\..\src\examples\layer2\Volumetric.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\math\tree_generator.h">
+      <Filter>octet\Maths</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\src\resources\mesh_builder.inl">

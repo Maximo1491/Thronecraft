@@ -31,9 +31,10 @@ namespace octet
 					vec3 sunsetColor = vec3(0.98, 0.7, 0.4);
 					vec3 sunDayColor = vec3(1, 1, 1);
 					vec3 moonColor = vec3(1, 1, 1);
-					float glowRadius = 0.8;
+					float glowRadius = 0.9;
 					float sunRadius = 0.9975;
 					float moonRadius = 0.9975;
+					float moonGlowRadius = 0.99;
 					float sunsetStart = 0.4;
 	
 					float Ksun = dot(normalize(vertex), normalize(sunDirection));
@@ -49,6 +50,10 @@ namespace octet
 
 					if (Kmoon > moonRadius)
 						Kmoon = 1.0;
+					//else if (Kmoon > moonGlowRadius + ((moonRadius - moonGlowRadius) * 0.999))
+						//Kmoon = 0.0;
+					else if (Kmoon > moonGlowRadius)
+						Kmoon = (Kmoon - moonGlowRadius) / (1.0 - moonGlowRadius);
 					else
 						Kmoon = 0.0;
 	
@@ -62,8 +67,10 @@ namespace octet
 	
 					if (Ksun > sunRadius)
 						gl_FragColor = vec4(max(Ksky * daySky, sunColor), 1.0);
-					else if (Kmoon > moonRadius)
-						gl_FragColor = vec4(mix(moonColor,  skyColor, 0.35), 1.0);
+					//else if (Kmoon > moonGlowRadius)
+						//gl_FragColor = vec4(mix(moonColor,  skyColor, 0.35 * Kmoon), 1.0);
+					else if (Kmoon > 0.0)
+						gl_FragColor = vec4(mix(skyColor, moonColor, 0.7 * Kmoon), 1.0);
 					else
 						gl_FragColor = vec4(max(skyColor, sunColor), 1.0);
 				}

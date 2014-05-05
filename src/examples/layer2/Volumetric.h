@@ -5,6 +5,7 @@ namespace octet
 	public:
 
 		flat_shader flat_shader_;
+		color_shader color_shader_;
 		ui_shader ui_shader_;
 		sky_shader sky_shader_;
 
@@ -33,6 +34,20 @@ namespace octet
 
 		int chunksX, chunksY, chunksZ;
 
+		int mouseX, mouseY;
+
+		enum {
+			num_sound_sources = 8,
+		};
+
+		ALuint sources[num_sound_sources];
+		unsigned cur_source;
+		ALuint whoosh;
+		ALuint bang;
+
+		int intScan;
+		FILE* file;
+
 		enum{
 			empty,
 			grass,
@@ -59,7 +74,7 @@ namespace octet
 			ui_snow_block,
 			ui_sand_block,
 			ui_brick_block,
-      ui_current_block_background,
+			ui_current_block_background,
 			ui_hotbar_background,
 			ui_crosshair_left,
 			ui_crosshair_right,
@@ -71,28 +86,45 @@ namespace octet
 
 		ui_builder ui;
 
-    enum{
-      ss_empty,
-      ss_background,
+		enum{
+			ss_empty,
+			ss_background,
+			ss_exit,
+			ss_load,
+			ss_new,
 
-      num_ss_elements,
-    };
+			num_ss_elements,
+		};
 
-    ui_builder startScreen;
+		ui_builder startScreen;
+
+		enum{
+			ls_empty,
+			ls_background,
+
+			num_ls_elements,
+		};
+
+		ui_builder loadScreen;
 
 		enum{
 			ps_empty,
-			ps_saveandquit,
-			ps_quit,
-
 			ps_background,
+			ps_notice,
+			ps_quit,
+			ps_saveandquit,
+			ps_cancel,
+			ps_menu,
 			num_ps_elements,
 		};
 
 		ui_builder pauseScreen;
 
 		enum{
-			loading,
+			start,
+			cleanLoading,
+			readingFile,
+			saveLoading,
 			playing,
 			paused,
 		};
@@ -101,22 +133,29 @@ namespace octet
 
 		noise terrainNoise;
 
-		Volumetric(int argc, char **argv) : app(argc, argv) { }
+		Volumetric(int argc, char **argv) : app(argc, argv){ }
+
+		ALuint get_sound_source()
+		{
+			return sources[cur_source++ % num_sound_sources];
+		}
 
 		void app_init()
 		{
 			//Initialise our shaders
 			flat_shader_.init();
+			color_shader_.init();
 			ui_shader_.init();
 			sky_shader_.init();
+
+			//Initialize sound
+			whoosh = resource_dict::get_sound_handle (AL_FORMAT_MONO16, "assets/invaderers/whoosh.wav");
+			cur_source = 0;
+			alGenSources (num_sound_sources, sources);
 
 			//Initialize the timer.
 			oldTime = clock();
 			skyTimer = 0.0f;
-
-			//player position & gravity
-			position = glm::vec3(176, 100, 176);
-			gravity = false;
 
 			//Get window width and height for UI elements
 			get_viewport_size(windowWidth, windowHeight);
@@ -134,39 +173,56 @@ namespace octet
 			blockColors[brick] = glm::vec4(0.87, 0.16, 0.04, 1);
 
 			//ui[loading_screen].init(0, 0, windowWidth, windowHeight, windowWidth, windowHeight, glm::vec4(1, 0, 0, 1));
-			playState = loading;
+			playState = start;
 
-      startScreen.init((float)windowWidth, (float)windowHeight, num_ss_elements);
+			startScreen.init((float)windowWidth, (float)windowHeight, num_ss_elements);
 
-			GLuint texture = resource_dict::get_texture_handle(GL_RGBA, "assets/Volumetric/startScreen.gif");
-      startScreen.addElement(ss_background, 0.0f, 0.0f, (float)windowWidth, (float)windowHeight, texture);
+			GLuint texture = resource_dict::get_texture_handle(GL_RGBA, "assets/Volumetric/start/startScreen.gif");
+			startScreen.addElement(ss_background, 0.0f, 0.0f, (float)windowWidth, (float)windowHeight, texture);
+			texture = resource_dict::get_texture_handle(GL_RGBA, "assets/Volumetric/start/startNewButton.gif");
+			startScreen.addElement(ss_new, (windowWidth*0.5f) -362.5f, (windowHeight*0.5f) - 83.0f - 50.0f, 725.0f, 100.0f, texture);
+			texture = resource_dict::get_texture_handle(GL_RGBA, "assets/Volumetric/start/startLoadButton.gif");
+			startScreen.addElement(ss_load, (windowWidth*0.5f) - 362.5f, (windowHeight*0.5f), 725.0f, 100.0f, texture);
+			texture = resource_dict::get_texture_handle(GL_RGBA, "assets/Volumetric/start/startExitButton.gif");
+			startScreen.addElement(ss_exit, (windowWidth*0.5f) - 362.5f, (windowHeight*0.5f) + 83.0f + 50.0f, 725.0f, 100.0f, texture);
+
+			loadScreen.init((float)windowWidth, (float)windowHeight, num_ls_elements);
+
+			texture = resource_dict::get_texture_handle(GL_RGBA, "assets/Volumetric/load/loadScreen.gif");
+			loadScreen.addElement(ls_background, 0.0f, 0.0f, (float)windowWidth, (float)windowHeight, texture);
 
 			pauseScreen.init((float)windowWidth, (float)windowHeight, num_ps_elements);
 
-			pauseScreen.addElement(ps_background, 0.0f, 0.0f, (float)windowWidth, (float)windowHeight, glm::vec4(0, 0, 0, 0.4f));
-			texture = resource_dict::get_texture_handle(GL_RGBA, "assets/Volumetric/saveAndQuitButton.gif");
-			pauseScreen.addElement(ps_saveandquit, (windowWidth*0.5f) - 200.0f, (windowHeight*0.5f) - 150.0f, 400.0f, 100.0f, texture);
-			texture = resource_dict::get_texture_handle(GL_RGBA, "assets/Volumetric/quitButton.gif");
-			pauseScreen.addElement(ps_quit, (windowWidth*0.5f) - 200.0f, (windowHeight*0.5f) + 50.0f, 400.0f, 100.0f, texture);
+			pauseScreen.addElement(ps_background, (windowWidth*0.5f) - 400.0f, (windowHeight*0.5f) - 300.0f, 800.0f, (windowHeight*0.5f) + 300.0f - 41.0f, glm::vec4(0, 0, 0, 0.75f));
+			texture = resource_dict::get_texture_handle(GL_RGBA, "assets/Volumetric/pause/PauseNotice2.gif");
+			pauseScreen.addElement(ps_notice, (windowWidth*0.5f) - 175.0f, (windowHeight*0.5f) - 285.0f, 350.0f, 75.0f, texture);
+			texture = resource_dict::get_texture_handle(GL_RGBA, "assets/Volumetric/pause/PauseQuitButton2.gif");
+			pauseScreen.addElement(ps_quit, (windowWidth*0.5f) - 100.0f, (windowHeight*0.5f) - 140.0f -40.0f, 200.0f, 60.0f, texture);
+			texture = resource_dict::get_texture_handle(GL_RGBA, "assets/Volumetric/pause/PauseSaveButton2.gif");
+			pauseScreen.addElement(ps_saveandquit, (windowWidth*0.5f) - 100.0f, (windowHeight*0.5f) - 80.0f, 200.0f, 120.0f, texture);
+			texture = resource_dict::get_texture_handle(GL_RGBA, "assets/Volumetric/pause/PauseMenuButton2.gif");
+			pauseScreen.addElement(ps_menu, (windowWidth*0.5f) - 100.0f, (windowHeight*0.5f) + 80.0f, 200.0f, 60.0f, texture);
+			texture = resource_dict::get_texture_handle(GL_RGBA, "assets/Volumetric/pause/PauseCancelButton2.gif");
+			pauseScreen.addElement(ps_cancel, (windowWidth*0.5f) - 100.0f, (windowHeight*0.5f) + 160.0f + 20.0f, 200.0f, 60.0f, texture);
 
 			ui.init((float)windowWidth, (float)windowHeight, num_ui_elements);
 
-      //CrossHair
+			//CrossHair
 			ui.addElement(ui_crosshair_left, (windowWidth*0.5f) - 6, (windowHeight*0.5f) - 2, 5, 4, glm::vec4(0, 0, 0, 1)); //Left
 			ui.addElement(ui_crosshair_right, (windowWidth*0.5f) + 1, (windowHeight*0.5f) - 2, 5, 4, glm::vec4(0, 0, 0, 1)); //Right
 			ui.addElement(ui_crosshair_top, (windowWidth*0.5f) - 2, (windowHeight*0.5f) - 6, 4, 5, glm::vec4(0, 0, 0, 1)); //Top
 			ui.addElement(ui_crosshair_bottom, (windowWidth*0.5f) - 2, (windowHeight*0.5f) + 1, 4, 5, glm::vec4(0, 0, 0, 1)); //Bottom
 
-      //UI bar
-      float hotbar_width = 60 * 8 + 10;
+			//UI bar
+			float hotbar_width = 60 * 8 + 10;
 			current_block_position = (windowWidth*0.5f) - (hotbar_width*0.5f) + 5;
 			texture = resource_dict::get_texture_handle(GL_RGBA, "assets/Volumetric/barTexture.gif");
-      ui.addElement(ui_hotbar_background, (windowWidth * 0.5f) - (hotbar_width * 0.5f), (float)windowHeight - 80.0f, hotbar_width, 70.0f, texture);
-      //Currently selected block
-      ui.addElement(ui_current_block_background, current_block_position, (float)windowHeight - 75.0f, 60.0f, 60.0f, glm::vec4(1, 0, 0.6, 1));
+			ui.addElement(ui_hotbar_background, (windowWidth * 0.5f) - (hotbar_width * 0.5f), (float)windowHeight - 80.0f, hotbar_width, 70.0f, texture);
+			//Currently selected block
+			ui.addElement(ui_current_block_background, current_block_position, (float)windowHeight - 75.0f, 60.0f, 60.0f, glm::vec4(1, 0, 0.6, 1));
 
-      //Fill the UI with avaliable blocks
-      float inventoryX = ((windowWidth*0.5f) - (hotbar_width*0.5f)) + 10;
+			//Fill the UI with avaliable blocks
+			float inventoryX = ((windowWidth*0.5f) - (hotbar_width*0.5f)) + 10;
 			for (int i = ui_grass_block; i <= ui_brick_block; i++)
 			{
 				ui.addElement(i, inventoryX, (float)windowHeight - 70.0f, 50.0f, 50.0f, blockColors[i]);
@@ -199,38 +255,6 @@ namespace octet
 
 			//Start by selecting a grass block
 			selectedBlock = grass;
-
-			FILE* file = fopen("../../assets/volumetric/saveFile.txt", "r");
-
-			//Tell the progam how many chunks we want.
-			if (file == NULL)
-			{
-        chunksX = SCX;
-        chunksY = SCY;
-        chunksZ = SCZ;
-				terrainNoise.setRandomSeed();
-        generateTerrain(0, 0, 256, 256);
-			}
-			else
-			{
-				fscanf(file, "%i", &chunksX);
-				fscanf(file, "%i", &chunksY);
-				fscanf(file, "%i", &chunksZ);
-
-				int intScan;
-
-				for (int x = 0; x < CX * chunksX; x++)
-				{
-					for (int y = 0; y < CY * chunksY; y++)
-					{
-						for (int z = 0; z < CZ * chunksZ; z++)
-						{
-							fscanf(file, "%i", &intScan);
-							c->set(x, y, z, intScan);
-						}
-					}
-				}
-			}
 
 			//Create our sky sphere for rendering.
 			sky_ = new sky();
@@ -271,7 +295,7 @@ namespace octet
 
 					for(int i = 0; i <= y; i++)
 					{
-						if(i == y && y > 100)
+						if(i == y && y > (CY * SCY) * 0.7)
 							c->set(x, i, z, snow);
 						else if( i >= y - 2)
 							c->set(x, i, z, grass);
@@ -326,7 +350,7 @@ namespace octet
 		{
 			if (playState == paused)
 			{
-				
+
 			}
 			else if (playState == playing)
 			{
@@ -542,23 +566,27 @@ namespace octet
 			glm::vec3 temp_d;
 
 			if (is_key_down('A'))
-				temp_a = position - (right_dir * (movespeed * 3));
-			if (c->get((int)glm::floor(temp_a.x), (int)glm::floor(temp_a.y), (int)glm::floor(temp_a.z)) == 0){
+				//temp_a = position - (right_dir * (movespeed * 3));
+			//if (c->get((int)glm::floor(temp_a.x), (int)glm::floor(temp_a.y), (int)glm::floor(temp_a.z)) == 0)
+			{
 				position -= right_dir * movespeed;
 			}
 			if (is_key_down('D'))
-				temp_d = position + (right_dir * (movespeed * 3));
-			if (c->get((int)glm::floor(temp_d.x), (int)glm::floor(temp_d.y), (int)glm::floor(temp_d.z)) == 0){
+				//temp_d = position + (right_dir * (movespeed * 3));
+			//if (c->get((int)glm::floor(temp_d.x), (int)glm::floor(temp_d.y), (int)glm::floor(temp_d.z)) == 0)
+			{
 				position += right_dir * movespeed;
 			}
 			if (is_key_down('W'))
-				temp_w = position + (forward_dir * (movespeed * 3));
-			if (c->get((int)glm::floor(temp_w.x), (int)glm::floor(temp_w.y), (int)glm::floor(temp_w.z)) == 0){
+				//temp_w = position + (forward_dir * (movespeed * 3));
+			//if (c->get((int)glm::floor(temp_w.x), (int)glm::floor(temp_w.y), (int)glm::floor(temp_w.z)) == 0)
+			{
 				position += forward_dir * movespeed;
 			}
 			if (is_key_down('S'))
-				temp_s = position - (forward_dir * (movespeed * 3));
-			if (c->get((int)glm::floor(temp_s.x), (int)glm::floor(temp_s.y), (int)glm::floor(temp_s.z)) == 0){
+				//temp_s = position - (forward_dir * (movespeed * 3));
+			//if (c->get((int)glm::floor(temp_s.x), (int)glm::floor(temp_s.y), (int)glm::floor(temp_s.z)) == 0)
+			{
 				position -= forward_dir * movespeed;
 			}
 			if (is_key_down('Q'))
@@ -677,6 +705,62 @@ namespace octet
 			view = glm::lookAt(position, position + lookat, glm::vec3(0, 1, 0));
 		}
 
+		void start_keyboard_controls()
+		{
+			if (is_key_down(key_esc))
+			{
+				exit(1);
+			}
+
+			if (is_key_down('1'))
+			{
+				playState = cleanLoading;
+			}
+
+			if(is_key_down('2'))
+			{
+				playState = readingFile;
+			}
+
+		}
+
+		void start_mouse_controls()
+		{
+			get_mouse_pos(mouseX, mouseY);
+
+			if (startScreen.hover(ss_new, mouseX, mouseY))
+			{
+				startScreen.changeTexture(ss_new,"assets/Volumetric/start/startNewButtonHover.gif");
+				if(is_key_down(key_lmb)){ 
+				set_key(key_lmb, false);
+				playState = cleanLoading;
+				loadScreen.render(ui_shader_);
+				}
+			}
+			else if (startScreen.hover(ss_load, mouseX, mouseY))
+			{
+				startScreen.changeTexture(ss_load,"assets/Volumetric/start/startLoadButtonHover.gif");
+				if(is_key_down(key_lmb)){ 
+				set_key(key_lmb, false);
+				playState = readingFile;
+				loadScreen.render(ui_shader_);
+				}
+			}
+			else if (startScreen.hover(ss_exit, mouseX, mouseY))
+			{
+				startScreen.changeTexture(ss_exit,"assets/Volumetric/start/startExitButtonHover.gif");
+				if(is_key_down(key_lmb)){ 
+				set_key(key_lmb, false);
+				exit(1);
+				}
+			}
+			else{
+				startScreen.changeTexture(ss_exit,"assets/Volumetric/start/startExitButton.gif");
+				startScreen.changeTexture(ss_load,"assets/Volumetric/start/startLoadButton.gif");
+				startScreen.changeTexture(ss_new,"assets/Volumetric/start/startNewButton.gif");
+			}
+		}
+
 		void paused_keyboard_controls()
 		{
 			if (is_key_down(key_esc))
@@ -689,20 +773,68 @@ namespace octet
 
 			if (is_key_down('1'))
 			{
-				SaveChunks();
 				exit(1);
 			}
 
 			if (is_key_down('2'))
 			{
+				SaveChunks();
 				exit(1);
+			}
+
+			if (is_key_down('3'))
+			{
+				playState = start;
+			}
+		}
+
+		void paused_mouse_controls()
+		{
+			get_mouse_pos(mouseX, mouseY);
+
+			if (pauseScreen.hover(ps_quit, mouseX, mouseY))
+			{
+				pauseScreen.changeTexture(ps_quit,"assets/Volumetric/pause/PauseQuitButton2Hover.gif");
+				if(is_key_down(key_lmb)) exit(1);
+			}
+			else if (pauseScreen.hover(ps_saveandquit, mouseX, mouseY))
+			{
+				pauseScreen.changeTexture(ps_saveandquit,"assets/Volumetric/pause/PauseSaveButton2Hover.gif"); 
+				if(is_key_down(key_lmb)){ 
+				SaveChunks();
+				exit(1);
+				}
+			}
+			else if (pauseScreen.hover(ps_menu, mouseX, mouseY))
+			{
+				pauseScreen.changeTexture(ps_menu,"assets/Volumetric/pause/PauseMenuButton2Hover.gif");
+				if(is_key_down(key_lmb)){ 
+				set_key(key_lmb, false);
+				playState = start;
+				}
+			}
+			else if (pauseScreen.hover(ps_cancel, mouseX, mouseY))
+			{
+				pauseScreen.changeTexture(ps_cancel,"assets/Volumetric/pause/PauseCancelButton2Hover.gif"); 
+				if(is_key_down(key_lmb)){ 
+				set_key(key_lmb, false);
+				playState = playing;
+				ShowCursor(false);
+				}
+			}
+			else{
+				pauseScreen.changeTexture(ps_quit,"assets/Volumetric/pause/PauseQuitButton2.gif");
+				pauseScreen.changeTexture(ps_saveandquit,"assets/Volumetric/pause/PauseSaveButton2.gif"); 
+				pauseScreen.changeTexture(ps_menu,"assets/Volumetric/pause/PauseMenuButton2.gif"); 
+				pauseScreen.changeTexture(ps_cancel,"assets/Volumetric/pause/PauseCancelButton2.gif"); 
 			}
 		}
 
 		void update_player()
 		{
-			if (c->get((int)(glm::floor(position.x)), (int)(glm::floor(position.y - 1.0f)), (int)(glm::floor(position.z))) == 0 && gravity == true)
-				position.y -= 0.6f;
+			if (position.x > 0 && position.x < CX * SCX && position.z > 0 && position.z < CZ * SCZ)
+				if (c->get((int)(glm::floor(position.x)), (int)(glm::floor(position.y - 1.0f)), (int)(glm::floor(position.z))) == 0 && gravity == true)
+					position.y -= 0.6f;
 		}
 
 		void draw_world(int x, int y, int width, int height)
@@ -714,10 +846,79 @@ namespace octet
 			glEnable(GL_BLEND);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-			if (playState == loading)
+			if (playState == start){
+				//ShowCursor(false);
+				glDepthMask(GL_FALSE);
+				startScreen.render(ui_shader_);
+				glDepthMask(GL_TRUE);
+				start_keyboard_controls();
+				start_mouse_controls();
+
+				//player position & gravity
+				position = glm::vec3(176, 100, 176);
+				gravity = false;
+
+			}
+			else if (playState == cleanLoading)
 			{
 				ShowCursor(false);
-				startScreen.render(ui_shader_);
+				loadScreen.render(ui_shader_);
+
+				chunksX = SCX;
+				chunksY = SCY;
+				chunksZ = SCZ;
+
+				for (int x = 0; x < CX * chunksX; x++)
+				{
+					for (int y = 0; y < CY * chunksY; y++)
+					{
+						for (int z = 0; z < CZ * chunksZ; z++)
+						{
+							c->set(x, y, z, 0);
+						}
+					}
+				}
+
+				terrainNoise.setRandomSeed();
+				generateTerrain(0, 0, 256, 256);
+
+				playState = playing;
+			}
+			else if (playState == readingFile)
+			{
+				ShowCursor(false);
+				loadScreen.render(ui_shader_);
+
+				file = fopen("../../assets/volumetric/saveFile.txt", "r");
+
+				if (file == NULL)
+				{
+					chunksX = SCX;
+					chunksY = SCY;
+					chunksZ = SCZ;
+					terrainNoise.setRandomSeed();
+					generateTerrain(0, 0, 256, 256);
+				}
+				else
+				{
+					fscanf(file, "%i", &chunksX);
+					fscanf(file, "%i", &chunksY);
+					fscanf(file, "%i", &chunksZ);
+
+					intScan;
+
+					for (int x = 0; x < CX * chunksX; x++)
+					{
+						for (int y = 0; y < CY * chunksY; y++)
+						{
+							for (int z = 0; z < CZ * chunksZ; z++)
+							{
+								fscanf(file, "%i", &intScan);
+								c->set(x, y, z, intScan);
+							}
+						}
+					}
+				}
 				playState = playing;
 			}
 			else if (playState == playing)
@@ -741,7 +942,7 @@ namespace octet
 				glm::mat4 lightMVP = lightProjection * lightView * lightModel;
 
 				//Draws our super chunk
-				c->render(model, view, projection, numOfLights, light_information, light_ambient, light_diffuse, flat_shader_);
+				c->render(model, view, projection, numOfLights, light_information, light_ambient, light_diffuse, flat_shader_, color_shader_);
 
 				//Draw the sky.
 				sky_->render(projection * view * model, position, glm::vec3(light_information[0].x, light_information[0].y, light_information[0].z), sky_shader_);
@@ -755,6 +956,9 @@ namespace octet
 			}
 			else if (playState == paused)
 			{
+				clock_t newTime = clock();
+				oldTime = newTime;
+
 				light_information[0] = glm::vec4(cos(light_angle * 0.0174532925f) * 0.75f, sin(light_angle * 0.0174532925f), cos(light_angle * 0.0174532925f) * 0.25f, 0.0f);
 
 				glm::mat4 lightProjection = glm::ortho<float>(-10, 10, -10, 10, -10, 20);
@@ -764,14 +968,17 @@ namespace octet
 				glm::mat4 lightMVP = lightProjection * lightView * lightModel;
 
 				//Draws our super chunk
-				c->render(model, view, projection, numOfLights, light_information, light_ambient, light_diffuse, flat_shader_);
+				c->render(model, view, projection, numOfLights, light_information, light_ambient, light_diffuse, flat_shader_, color_shader_);
 
 				//Draw the sky.
 				sky_->render(projection * view * model, position, glm::vec3(light_information[0].x, light_information[0].y, light_information[0].z), sky_shader_);
 
+				glDepthMask(GL_FALSE);
 				pauseScreen.render(ui_shader_);
+				glDepthMask(GL_TRUE);
 
 				paused_keyboard_controls();
+				paused_mouse_controls();
 			}
 		}
 	};

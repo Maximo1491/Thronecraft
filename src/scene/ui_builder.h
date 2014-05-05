@@ -41,10 +41,30 @@ namespace octet {
 			ui_elements[p] = e;
 		}
 
+		void changeTexture(int e, string s)
+		{
+			ui_elements[e].changeTexture(s);
+		}
+
     void setPos(int e, float x_, float y_)
     {
       ui_elements[e].setPos(x_, y_);
     }
+
+		bool hover(int e, int mouseX, int mouseY)
+		{
+			vec2 elePos;
+
+			elePos = ui_elements[e].getPos();
+
+			if (mouseX > elePos.x() && mouseX < elePos.x() + ui_elements[e].getWidth() &&
+					mouseY > elePos.y() && mouseY < elePos.y() + ui_elements[e].getHeight())
+			{
+				return true;
+			}
+
+			return false;
+		}
 
 		void render(ui_shader &shader)
 		{

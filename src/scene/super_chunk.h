@@ -81,7 +81,7 @@ namespace octet
 				c[cx][cy][cz + 1]->setChanged(true);
 		}
 
-		void render(glm::mat4 model, glm::mat4 view, glm::mat4 projection, int numOfLights, glm::vec4 *light_information, glm::vec4 light_ambient, glm::vec4 *light_diffuse, flat_shader color_shader_)
+		void render(glm::mat4 model, glm::mat4 view, glm::mat4 projection, int numOfLights, glm::vec4 *light_information, glm::vec4 light_ambient, glm::vec4 *light_diffuse, flat_shader flat_shader_, color_shader color_shader_)
 		{
       //Create a temporary modelToWorld to store the keep track of the start point
       glm::mat4 temp = model;
@@ -101,7 +101,7 @@ namespace octet
 							glm::mat4 mvp = projection * view * model;
 
 							//Send the colour shader our new projection
-							color_shader_.render(mvp, numOfLights, light_information, light_ambient, light_diffuse);
+							//flat_shader_.render(mvp, numOfLights, light_information, light_ambient, light_diffuse);
 
 							//Draw the chunk at the current position
 
@@ -138,7 +138,7 @@ namespace octet
 								chunkArray[5] = 0;
 
 
-							c[x][y][z]->render(chunkArray);
+							c[x][y][z]->render(chunkArray, mvp, numOfLights, light_information, light_ambient, light_diffuse, flat_shader_, color_shader_);
 						}
 					}
 				}

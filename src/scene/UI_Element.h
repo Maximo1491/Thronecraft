@@ -127,6 +127,26 @@ namespace octet {
 			matrix = pos * scale;
     }
 
+		vec2 getPos()
+		{
+			return vec2(x, y);
+		}
+
+		float getWidth()
+		{
+			return width;
+		}
+
+		float getHeight()
+		{
+			return height;
+		}
+
+		void changeTexture(string s)
+		{
+			texture = resource_dict::get_texture_handle(GL_RGBA, s.c_str());
+		}
+
 		void render(ui_shader &shader)
 		{
 			glActiveTexture(GL_TEXTURE0);
