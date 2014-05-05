@@ -47,6 +47,7 @@
     <ClInclude Include="..\..\src\containers\ref.h" />
     <ClInclude Include="..\..\src\containers\string.h" />
     <ClInclude Include="..\..\src\examples\layer2\engine.h" />
+    <ClInclude Include="..\..\src\examples\layer2\Sound.h" />
     <ClInclude Include="..\..\src\examples\layer2\Volumetric.h" />
     <ClInclude Include="..\..\src\helpers\http_server.h" />
     <ClInclude Include="..\..\src\helpers\mouse_ball.h" />
@@ -235,14 +236,16 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <FloatingPointModel>Fast</FloatingPointModel>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <AdditionalIncludeDirectories>..\..\assets\openAL\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>..\..\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\assets\openAL\libs\Win32;..\..\lib</AdditionalLibraryDirectories>
       <StackReserveSize>4194304</StackReserveSize>
       <HeapCommitSize>
       </HeapCommitSize>
+      <AdditionalDependencies>EFX-Util.lib;openAL32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugOBB|Win32'">

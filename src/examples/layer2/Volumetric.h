@@ -36,14 +36,7 @@ namespace octet
 
 		int mouseX, mouseY;
 
-		enum {
-			num_sound_sources = 8,
-		};
-
-		ALuint sources[num_sound_sources];
-		unsigned cur_source;
-		ALuint whoosh;
-		ALuint bang;
+		Sound soundEngine;
 
 		int intScan;
 		FILE* file;
@@ -135,11 +128,6 @@ namespace octet
 
 		Volumetric(int argc, char **argv) : app(argc, argv){ }
 
-		ALuint get_sound_source()
-		{
-			return sources[cur_source++ % num_sound_sources];
-		}
-
 		void app_init()
 		{
 			//Initialise our shaders
@@ -147,11 +135,6 @@ namespace octet
 			color_shader_.init();
 			ui_shader_.init();
 			sky_shader_.init();
-
-			//Initialize sound
-			whoosh = resource_dict::get_sound_handle (AL_FORMAT_MONO16, "assets/invaderers/whoosh.wav");
-			cur_source = 0;
-			alGenSources (num_sound_sources, sources);
 
 			//Initialize the timer.
 			oldTime = clock();
@@ -695,6 +678,7 @@ namespace octet
 				ShowCursor(true);
 
 				set_key(key_esc, false);
+				soundEngine.PlayWhooshSound();
 			}
 
 			glm::vec3 lookat;

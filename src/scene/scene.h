@@ -36,6 +36,7 @@
 #include "../scene/mesh_points.h"
 #include "../scene/wireframe.h"
 
+#include "../../src/examples/layer2/Sound.h"
 #define CX 16
 #define CY 16
 #define CZ 16

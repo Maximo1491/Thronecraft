@@ -1,3 +1,3 @@
 ﻿  main.cpp
 main.obj : warning LNK4075: ignoring '/EDITANDCONTINUE' due to '/INCREMENTAL:NO' specification
-  layer2.vcxproj -> C:\Users\Cory\Perforce\cgagel_Joker-PC_6927\vc2010\layer2\Debug\layer2.exe
+  layer2.vcxproj -> C:\Users\Cory\Documents\GitHub\Volumetric\vc2010\layer2\Debug\layer2.exe
