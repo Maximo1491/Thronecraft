@@ -71,6 +71,11 @@ namespace octet {
 					color = vec4(0.87, 0.16, 0.04, 1);
 				}
 
+				else if (pos.w == 9.0) // water
+				{
+					color = vec4(0.137, 0.812, 0.933, 1);
+				}
+
 				else
 					color = vec4(1, 1, 1, 1);
 

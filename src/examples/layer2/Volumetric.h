@@ -62,6 +62,7 @@ namespace octet
 			snow,
 			sand,
 			brick,
+			water,
 
 			numTypes,
 		};
@@ -171,6 +172,7 @@ namespace octet
 			blockColors[snow] = glm::vec4(0.75, 0.75, 0.75, 1);
 			blockColors[sand] = glm::vec4(1.0, 0.95, 0.21, 1);
 			blockColors[brick] = glm::vec4(0.87, 0.16, 0.04, 1);
+			blockColors[water] = glm::vec4(0.137, 0.812, 0.933, 1);
 
 			//ui[loading_screen].init(0, 0, windowWidth, windowHeight, windowWidth, windowHeight, glm::vec4(1, 0, 0, 1));
 			playState = start;
@@ -282,6 +284,295 @@ namespace octet
 			fclose(file);
 		}
 
+		void createTree1(int x_, int y_, int z_)
+		{
+			c->set(x_, y_ + 1, z_, wood);
+			c->set(x_, y_ + 2, z_, wood);
+			c->set(x_, y_ + 3, z_, wood);
+			c->set(x_, y_ + 4, z_, wood);
+			c->set(x_ + 1, y_ + 4, z_, leaves);
+			c->set(x_ - 1, y_ + 4, z_, leaves);
+			c->set(x_, y_ + 4, z_ + 1, leaves);
+			c->set(x_, y_ + 4, z_ - 1, leaves);
+			c->set(x_, y_ + 5, z_, leaves);
+		}
+
+		void createTree2(int x_, int y_, int z_)
+		{
+			c->set(x_, y_ + 1, z_, wood);
+			c->set(x_, y_ + 2, z_, wood);
+			c->set(x_, y_ + 3, z_, wood);
+			c->set(x_, y_ + 4, z_, wood);
+			c->set(x_, y_ + 5, z_, wood);
+			c->set(x_ + 1, y_ + 5, z_, leaves);
+			c->set(x_ + 1, y_ + 5, z_ + 1, leaves);
+			c->set(x_ + 1, y_ + 5, z_ - 1, leaves);
+			c->set(x_ - 1, y_ + 5, z_, leaves);
+			c->set(x_ - 1, y_ + 5, z_ + 1, leaves);
+			c->set(x_ - 1, y_ + 5, z_ - 1, leaves);
+			c->set(x_, y_ + 5, z_ + 1, leaves);
+			c->set(x_, y_ + 5, z_ - 1, leaves);
+			c->set(x_, y_ + 6, z_, leaves);
+		}
+
+		void createTree3(int x_, int y_, int z_)
+		{
+			c->set(x_, y_ + 1, z_, wood);
+			c->set(x_, y_ + 2, z_, wood);
+			c->set(x_, y_ + 3, z_, wood);
+			c->set(x_, y_ + 4, z_, wood);
+			c->set(x_, y_ + 5, z_, wood);
+			c->set(x_ + 1, y_ + 3, z_, leaves);
+			c->set(x_ - 1, y_ + 3, z_, leaves);
+			c->set(x_, y_ + 3, z_ + 1, leaves);
+			c->set(x_, y_ + 3, z_ - 1, leaves);
+			c->set(x_ + 2, y_ + 4, z_, leaves);
+			c->set(x_ + 1, y_ + 4, z_, leaves);
+			c->set(x_ + 1, y_ + 4, z_ + 1, leaves);
+			c->set(x_ + 1, y_ + 4, z_ - 1, leaves);
+			c->set(x_ - 2, y_ + 4, z_, leaves);
+			c->set(x_ - 1, y_ + 4, z_, leaves);
+			c->set(x_ - 1, y_ + 4, z_ + 1, leaves);
+			c->set(x_ - 1, y_ + 4, z_ - 1, leaves);
+			c->set(x_, y_ + 4, z_ + 2, leaves);
+			c->set(x_, y_ + 4, z_ + 1, leaves);
+			c->set(x_, y_ + 4, z_ - 2, leaves);
+			c->set(x_, y_ + 4, z_ - 1, leaves);
+			c->set(x_ + 1, y_ + 5, z_, leaves);
+			c->set(x_ - 1, y_ + 5, z_, leaves);
+			c->set(x_, y_ + 5, z_ + 1, leaves);
+			c->set(x_, y_ + 5, z_ - 1, leaves);
+			c->set(x_, y_ + 6, z_, leaves);
+		}
+
+		void createBrickHouse(int x_, int y_, int z_)
+		{
+			c->set(x_ - 1, y_ + 1, z_ - 1, brick);
+			c->set(x_ - 2, y_ + 1, z_ - 1, brick);
+			c->set(x_ - 3, y_ + 1, z_ - 1, brick);
+			c->set(x_ - 4, y_ + 1, z_ - 1, brick);
+
+			c->set(x_ - 1, y_ + 2, z_ - 1, brick);
+			c->set(x_ - 2, y_ + 2, z_ - 1, brick);
+			c->set(x_ - 3, y_ + 2, z_ - 1, brick);
+			c->set(x_ - 4, y_ + 2, z_ - 1, brick);
+
+			c->set(x_ - 1, y_ + 3, z_ - 1, brick);
+			c->set(x_ - 2, y_ + 3, z_ - 1, brick);
+			c->set(x_ - 3, y_ + 3, z_ - 1, brick);
+			c->set(x_ - 4, y_ + 3, z_ - 1, brick);
+
+			c->set(x_ - 1, y_ + 4, z_ - 1, brick);
+			c->set(x_ - 2, y_ + 4, z_ - 1, brick);
+			c->set(x_ - 3, y_ + 4, z_ - 1, brick);
+			c->set(x_ - 4, y_ + 4, z_ - 1, brick);
+
+			c->set(x_ - 1, y_ + 1, z_ - 2, brick);
+			c->set(x_ - 4, y_ + 1, z_ - 2, brick);
+
+			c->set(x_ - 1, y_ + 2, z_ - 2, brick);
+			c->set(x_ - 4, y_ + 2, z_ - 2, brick);
+
+			c->set(x_ - 1, y_ + 4, z_ - 2, brick);
+			c->set(x_ - 2, y_ + 4, z_ - 2, brick);
+			c->set(x_ - 3, y_ + 4, z_ - 2, brick);
+			c->set(x_ - 4, y_ + 4, z_ - 2, brick);
+
+			c->set(x_ - 2, y_ + 5, z_ - 2, brick);
+			c->set(x_ - 3, y_ + 5, z_ - 2, brick);
+
+			c->set(x_ - 1, y_ + 1, z_ - 3, brick);
+			c->set(x_ - 4, y_ + 1, z_ - 3, brick);
+
+			c->set(x_ - 1, y_ + 2, z_ - 3, brick);
+			c->set(x_ - 4, y_ + 2, z_ - 3, brick);
+
+			c->set(x_ - 1, y_ + 3, z_ - 3, brick);
+			c->set(x_ - 4, y_ + 3, z_ - 3, brick);
+
+			c->set(x_ - 1, y_ + 4, z_ - 3, brick);
+			c->set(x_ - 2, y_ + 4, z_ - 3, brick);
+			c->set(x_ - 3, y_ + 4, z_ - 3, brick);
+			c->set(x_ - 4, y_ + 4, z_ - 3, brick);
+
+			c->set(x_ - 2, y_ + 5, z_ - 3, brick);
+			c->set(x_ - 3, y_ + 5, z_ - 3, brick);
+
+			c->set(x_ - 1, y_ + 1, z_ - 4, brick);
+			c->set(x_ - 4, y_ + 1, z_ - 4, brick);
+
+			c->set(x_ - 1, y_ + 2, z_ - 4, brick);
+			c->set(x_ - 4, y_ + 2, z_ - 4, brick);
+
+			c->set(x_ - 1, y_ + 3, z_ - 4, brick);
+			c->set(x_ - 4, y_ + 3, z_ - 4, brick);
+
+			c->set(x_ - 1, y_ + 4, z_ - 4, brick);
+			c->set(x_ - 2, y_ + 4, z_ - 4, brick);
+			c->set(x_ - 3, y_ + 4, z_ - 4, brick);
+			c->set(x_ - 4, y_ + 4, z_ - 4, brick);
+
+			c->set(x_ - 2, y_ + 5, z_ - 4, brick);
+			c->set(x_ - 3, y_ + 5, z_ - 4, brick);
+
+			c->set(x_ - 1, y_ + 1, z_ - 5, brick);
+			c->set(x_ - 4, y_ + 1, z_ - 5, brick);
+
+			c->set(x_ - 1, y_ + 2, z_ - 5, brick);
+			c->set(x_ - 4, y_ + 2, z_ - 5, brick);
+
+			c->set(x_ - 1, y_ + 4, z_ - 5, brick);
+			c->set(x_ - 2, y_ + 4, z_ - 5, brick);
+			c->set(x_ - 3, y_ + 4, z_ - 5, brick);
+			c->set(x_ - 4, y_ + 4, z_ - 5, brick);
+
+			c->set(x_ - 2, y_ + 5, z_ - 5, brick);
+			c->set(x_ - 3, y_ + 5, z_ - 5, brick);
+
+			c->set(x_ - 1, y_ + 1, z_ - 6, brick);
+			c->set(x_ - 4, y_ + 1, z_ - 6, brick);
+
+			c->set(x_ - 1, y_ + 2, z_ - 6, brick);
+			c->set(x_ - 4, y_ + 2, z_ - 6, brick);
+
+			c->set(x_ - 1, y_ + 3, z_ - 6, brick);
+			c->set(x_ - 4, y_ + 3, z_ - 6, brick);
+
+			c->set(x_ - 1, y_ + 4, z_ - 6, brick);
+			c->set(x_ - 2, y_ + 4, z_ - 6, brick);
+			c->set(x_ - 3, y_ + 4, z_ - 6, brick);
+			c->set(x_ - 4, y_ + 4, z_ - 6, brick);
+		}
+
+		void createWoodHouse(int x_, int y_, int z_)
+		{
+			c->set(x_ - 1, y_ + 1, z_ - 1, wood);
+			c->set(x_ - 2, y_ + 1, z_ - 1, wood);
+			c->set(x_ - 3, y_ + 1, z_ - 1, wood);
+			c->set(x_ - 4, y_ + 1, z_ - 1, wood);
+
+			c->set(x_ - 1, y_ + 2, z_ - 1, wood);
+			c->set(x_ - 2, y_ + 2, z_ - 1, wood);
+			c->set(x_ - 3, y_ + 2, z_ - 1, wood);
+			c->set(x_ - 4, y_ + 2, z_ - 1, wood);
+
+			c->set(x_ - 1, y_ + 3, z_ - 1, wood);
+			c->set(x_ - 2, y_ + 3, z_ - 1, wood);
+			c->set(x_ - 3, y_ + 3, z_ - 1, wood);
+			c->set(x_ - 4, y_ + 3, z_ - 1, wood);
+
+			c->set(x_ - 1, y_ + 4, z_ - 1, wood);
+			c->set(x_ - 2, y_ + 4, z_ - 1, wood);
+			c->set(x_ - 3, y_ + 4, z_ - 1, wood);
+			c->set(x_ - 4, y_ + 4, z_ - 1, wood);
+
+			c->set(x_ - 1, y_ + 1, z_ - 2, wood);
+			c->set(x_ - 4, y_ + 1, z_ - 2, wood);
+
+			c->set(x_ - 1, y_ + 2, z_ - 2, wood);
+			c->set(x_ - 4, y_ + 2, z_ - 2, wood);
+
+			c->set(x_ - 1, y_ + 4, z_ - 2, wood);
+			c->set(x_ - 2, y_ + 4, z_ - 2, wood);
+			c->set(x_ - 3, y_ + 4, z_ - 2, wood);
+			c->set(x_ - 4, y_ + 4, z_ - 2, wood);
+
+			c->set(x_ - 2, y_ + 5, z_ - 2, wood);
+			c->set(x_ - 3, y_ + 5, z_ - 2, wood);
+
+			c->set(x_ - 1, y_ + 1, z_ - 3, wood);
+			c->set(x_ - 4, y_ + 1, z_ - 3, wood);
+
+			c->set(x_ - 1, y_ + 2, z_ - 3, wood);
+			c->set(x_ - 4, y_ + 2, z_ - 3, wood);
+
+			c->set(x_ - 1, y_ + 3, z_ - 3, wood);
+			c->set(x_ - 4, y_ + 3, z_ - 3, wood);
+
+			c->set(x_ - 1, y_ + 4, z_ - 3, wood);
+			c->set(x_ - 2, y_ + 4, z_ - 3, wood);
+			c->set(x_ - 3, y_ + 4, z_ - 3, wood);
+			c->set(x_ - 4, y_ + 4, z_ - 3, wood);
+
+			c->set(x_ - 2, y_ + 5, z_ - 3, wood);
+			c->set(x_ - 3, y_ + 5, z_ - 3, wood);
+
+			c->set(x_ - 1, y_ + 1, z_ - 4, wood);
+			c->set(x_ - 4, y_ + 1, z_ - 4, wood);
+
+			c->set(x_ - 1, y_ + 2, z_ - 4, wood);
+			c->set(x_ - 4, y_ + 2, z_ - 4, wood);
+
+			c->set(x_ - 1, y_ + 3, z_ - 4, wood);
+			c->set(x_ - 4, y_ + 3, z_ - 4, wood);
+
+			c->set(x_ - 1, y_ + 4, z_ - 4, wood);
+			c->set(x_ - 2, y_ + 4, z_ - 4, wood);
+			c->set(x_ - 3, y_ + 4, z_ - 4, wood);
+			c->set(x_ - 4, y_ + 4, z_ - 4, wood);
+
+			c->set(x_ - 2, y_ + 5, z_ - 4, wood);
+			c->set(x_ - 3, y_ + 5, z_ - 4, wood);
+
+			c->set(x_ - 1, y_ + 1, z_ - 5, wood);
+			c->set(x_ - 4, y_ + 1, z_ - 5, wood);
+
+			c->set(x_ - 1, y_ + 2, z_ - 5, wood);
+			c->set(x_ - 4, y_ + 2, z_ - 5, wood);
+
+			c->set(x_ - 1, y_ + 4, z_ - 5, wood);
+			c->set(x_ - 2, y_ + 4, z_ - 5, wood);
+			c->set(x_ - 3, y_ + 4, z_ - 5, wood);
+			c->set(x_ - 4, y_ + 4, z_ - 5, wood);
+
+			c->set(x_ - 2, y_ + 5, z_ - 5, wood);
+			c->set(x_ - 3, y_ + 5, z_ - 5, wood);
+
+			c->set(x_ - 1, y_ + 1, z_ - 6, wood);
+			c->set(x_ - 4, y_ + 1, z_ - 6, wood);
+
+			c->set(x_ - 1, y_ + 2, z_ - 6, wood);
+			c->set(x_ - 4, y_ + 2, z_ - 6, wood);
+
+			c->set(x_ - 1, y_ + 3, z_ - 6, wood);
+			c->set(x_ - 4, y_ + 3, z_ - 6, wood);
+
+			c->set(x_ - 1, y_ + 4, z_ - 6, wood);
+			c->set(x_ - 2, y_ + 4, z_ - 6, wood);
+			c->set(x_ - 3, y_ + 4, z_ - 6, wood);
+			c->set(x_ - 4, y_ + 4, z_ - 6, wood);
+		}
+
+		void createBuildingBorder(int x, int y, int z)
+		{
+			c->set(x - 5, y + 1, z - 7, brick);
+			c->set(x - 4, y + 1, z - 7, brick);
+			c->set(x - 3, y + 1, z - 7, brick);
+			c->set(x - 2, y + 1, z - 7, brick);
+			c->set(x - 1, y + 1, z - 7, brick);
+			c->set(x - 5, y + 1, z, brick);
+			c->set(x - 4, y + 1, z, brick);
+			c->set(x - 3, y + 1, z, brick);
+			c->set(x - 2, y + 1, z, brick);
+			c->set(x - 1, y + 1, z, brick);
+			c->set(x, y + 1, z - 7, brick);
+			c->set(x, y + 1, z - 6, brick);
+			c->set(x, y + 1, z - 5, brick);
+			c->set(x, y + 1, z - 4, brick);
+			c->set(x, y + 1, z - 3, brick);
+			c->set(x, y + 1, z - 2, brick);
+			c->set(x, y + 1, z - 1, brick);
+			c->set(x, y + 1, z, brick);
+			c->set(x - 5, y + 1, z - 7, brick);
+			c->set(x - 5, y + 1, z - 6, brick);
+			c->set(x - 5, y + 1, z - 5, brick);
+			c->set(x - 5, y + 1, z - 4, brick);
+			c->set(x - 5, y + 1, z - 3, brick);
+			c->set(x - 5, y + 1, z - 2, brick);
+			c->set(x - 5, y + 1, z - 1, brick);
+			c->set(x - 5, y + 1, z, brick);
+		}
+
 		void generateTerrain(int xPos, int zPos, int width, int depth)
 		{
 
@@ -293,16 +584,90 @@ namespace octet
 
 					int y = (int)((total * 64.0f) + 64.0f); //Creates a height between 0-128
 
-					for(int i = 0; i <= y; i++)
+					for (int i = 0; i <= y; i++)
 					{
-						if(i == y && y > (CY * SCY) * 0.7)
+						if (i == y && y >(CY * SCY) * 0.7)
 							c->set(x, i, z, snow);
-						else if( i >= y - 2)
+						else if (i > (CY * SCY) * 0.65)
+							c->set(x, i, z, stone);
+						else if (i > (CY * SCY) * 0.47)
 							c->set(x, i, z, grass);
-						else if( i >= y - 6)
+						else if (i > (CY * SCY) * 0.45)
+							c->set(x, i, z, sand);
+						else if (i > (CY * SCY) * 0.4)
 							c->set(x, i, z, dirt);
 						else
 							c->set(x, i, z, stone);
+					}
+
+					if (y < (CY * SCY) * 0.65 && y >(CY * SCY) * 0.47 && rand() % 300 == 1)
+					{
+						if (x > xPos + 2 && z > zPos + 2 && x < xPos + width - 2 && z < zPos + depth - 2)
+						{
+							switch (rand() % 3)
+							{
+							case 0:
+								createTree1(x, y, z);
+								break;
+							case 1:
+								createTree2(x, y, z);
+								break;
+							case 2:
+								createTree3(x, y, z);
+								break;
+							}
+						}
+					}
+
+					bool flat = true;
+					if (x > xPos && z > zPos && x < xPos + width && z < zPos + depth && y >(CY * SCY) * 0.45)
+					{
+						for (int i = x - 5; i <= x; i++)
+						{
+							for (int j = z - 7; j <= z; j++)
+							{
+								if (c->get(i, y + 1, j) != 0)
+								{
+									flat = false;
+								}
+								if (c->get(i, y, j) == 0)
+								{
+									flat = false;
+								}
+							}
+						}
+					}
+					else
+					{
+						flat = false;
+					}
+
+					if (flat == true)
+					{
+						if (y > (CY * SCY) * 0.45 && y <= (CY * SCY) * 0.47)
+						{
+							if (rand() % 20 == 1)
+								createWoodHouse(x, y, z);
+						}
+						else if (y > (CY * SCY) * 0.47 && y <= (CY * SCY) * 0.65)
+						{
+							if (rand() % 100 == 1)
+								createBrickHouse(x, y, z);
+						}
+						else
+						{
+							if (rand() % 40 == 1)
+								createWoodHouse(x, y, z);
+						}
+					}
+
+					if (y < (CY * SCY) * 0.45)
+					{
+						c->set(x, y - 1, z, sand);
+						for (int i = y; i <= (CY * SCY) * 0.45; i++)
+						{
+							c->set(x, i, z, water);
+						}
 					}
 				}
 			}
