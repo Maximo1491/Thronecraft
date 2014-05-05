@@ -1,4 +1,4 @@
-﻿Build started 05/05/2014 17:29:29.
+﻿Build started 05/05/2014 17:45:07.
      1>Project "C:\Users\Max\Documents\GitHub\Volumetric\vc2010\layer2\layer2.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /I..\..\assets\openAL\include /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /arch:SSE2 /fp:fast /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt ..\..\src\examples\layer2\main.cpp
@@ -13,4 +13,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:04.23
+Time Elapsed 00:00:03.82

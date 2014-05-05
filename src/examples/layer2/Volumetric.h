@@ -1329,6 +1329,7 @@ namespace octet
 					light_angle -= 360.0f;
 
 				//Sound
+				float maxVolume = 0.7f;
 				float abs_light_angle = abs (light_angle);
 
 				if ((light_angle < 10.0f && light_angle > 0.0f) || (light_angle > 170.0f && light_angle < 180.0f))
@@ -1343,7 +1344,7 @@ namespace octet
 					if (abs_light_angle > 170.0f)
 						abs_light_angle = 180.0f - abs_light_angle;
 
-					float diff = abs_light_angle / 10.0f;
+					float diff = (abs_light_angle / 10.0f) * maxVolume;
 					soundEngine.AdjustBackground (diff);
 				}
 
@@ -1359,12 +1360,12 @@ namespace octet
 					if (abs_light_angle > 170.0f)
 						abs_light_angle = 180.0f - abs_light_angle;
 
-					float diff = abs_light_angle / 10.0f;
+					float diff = (abs_light_angle / 10.0f) * maxVolume;
 					soundEngine.AdjustBackground (diff);
 				}
 
 				else
-					soundEngine.AdjustBackground (1.0f);
+					soundEngine.AdjustBackground (maxVolume);
 				//Sound End
 
 				light_information[0] = glm::vec4(cos(light_angle * 0.0174532925f) * 0.75f, sin(light_angle * 0.0174532925f), cos(light_angle * 0.0174532925f) * 0.25f, 0.0f);

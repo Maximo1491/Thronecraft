@@ -54,7 +54,7 @@ public:
 
 		music[0] = LoadWavFile ("../../assets/volumetric/audio/music/day1.wav", 0.0f, 1.0f, AL_TRUE);
 		music[1] = LoadWavFile ("../../assets/volumetric/audio/music/night1.wav", 0.0f, 1.0f, AL_TRUE);
-		music[2] = LoadWavFile ("../../assets/volumetric/audio/music/menu music1.wav", 1.0f, 1.0f, AL_TRUE);
+		music[2] = LoadWavFile ("../../assets/volumetric/audio/music/menu music1.wav", 0.7f, 1.0f, AL_TRUE);
 	}
 
 	~Sound()
