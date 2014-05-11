@@ -1171,6 +1171,7 @@ namespace octet
 			view = glm::lookAt(position, position + lookat, glm::vec3(0, 1, 0));
 		}
 
+		//Keyboard controls for the start screen
 		void start_keyboard_controls()
 		{
 			if (is_key_down(key_esc))
