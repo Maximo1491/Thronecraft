@@ -4,6 +4,8 @@
 *.tlog
 *.lastbuildstate
 *.opensdf
+debug/
+Debug/
 ipch/
 *.sdf
 *.suo
