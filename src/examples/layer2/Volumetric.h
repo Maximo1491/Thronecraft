@@ -673,6 +673,7 @@ namespace octet
 						flat = false;
 					}
 
+					//If there is a flat space then place a house in that space
 					if (flat == true)
 					{
 						if (y > (CY * SCY) * 0.45 && y <= (CY * SCY) * 0.47)
@@ -744,12 +745,14 @@ namespace octet
 
 #elif defined(_WIN32) || defined(_WIN64)
 
+		//Mouse movement if the player is playing
 		void motion(int x, int y, HWND* w)
 		{
 			if (playState == paused)
 			{
 
 			}
+			//Keeps the mouse in the center of the screen.
 			else if (playState == playing)
 			{
 				static bool wrap = false;
@@ -806,7 +809,7 @@ namespace octet
 				set_key(key_rmb, false);
 
 				GLfloat depth;
-
+				//Unprojects the pixel in the middle of the screen and removes the block that is in that position
 				glReadPixels((int)(width * 0.5f), (int)(height * 0.5f), 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
 				glm::vec4 viewport = glm::vec4(0, 0, width, height);
 				glm::vec3 wincoord = glm::vec3(width * 0.5, height * 0.5, depth);
@@ -818,6 +821,7 @@ namespace octet
 				if (objcoord.z < 0)
 					objcoord.z = 0;
 
+				//Rounds the pixel so that it is in its correct position
 				if (dti(objcoord.x) < 0.01f && dti(objcoord.x) > -0.01f)
 					objcoord.x = glm::round(objcoord.x);
 				if (dti(objcoord.y) < 0.01f && dti(objcoord.y) > -0.01f)
@@ -829,6 +833,7 @@ namespace octet
 				float ny = objcoord.y;
 				float nz = objcoord.z;
 
+				//Moves the current pixel position slightly inside the block that was clicked so we know what block we need to remove
 				if (dti(objcoord.x) < dti(objcoord.y))
 				{
 					if (dti(objcoord.x) < dti(objcoord.z))
@@ -870,12 +875,13 @@ namespace octet
 
 				glm::vec3 end = glm::vec3(x, y, z);
 
+				//Removes the block
 				if (c->get((int)end.x, (int)end.y, (int)end.z) != 0)
 				{
 					c->set((int)end.x, (int)end.y, (int)end.z, 0);
 
 					//Sound
-					soundEngine.PlaySound (placing);
+					soundEngine.PlaySound (breaking);
 					//Sound End
 				}
 			}
@@ -885,7 +891,7 @@ namespace octet
 				set_key(key_lmb, false);
 
 				GLfloat depth;
-
+				//Same as above except we are adding a block
 				glReadPixels((int)(width * 0.5f), (int)(height * 0.5f), 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
 				glm::vec4 viewport = glm::vec4(0, 0, width, height);
 				glm::vec3 wincoord = glm::vec3(width * 0.5, height * 0.5, depth);
@@ -897,6 +903,7 @@ namespace octet
 				if (objcoord.z < 0)
 					objcoord.z = 0;
 
+				//Rounds the pixel so that it is in its correct position
 				if (dti(objcoord.x) < 0.01f && dti(objcoord.x) > -0.01f)
 					objcoord.x = glm::round(objcoord.x);
 				if (dti(objcoord.y) < 0.01f && dti(objcoord.y) > -0.01f)
@@ -908,6 +915,7 @@ namespace octet
 				float ny = objcoord.y;
 				float nz = objcoord.z;
 
+				//Moves the current pixel position slightly away from the clicked block so we know where to add the new block
 				if (dti(objcoord.x) < dti(objcoord.y))
 				{
 					if (dti(objcoord.x) < dti(objcoord.z))
@@ -949,12 +957,13 @@ namespace octet
 
 				glm::vec3 end = glm::vec3(x, y, z);
 
+				//Adds the block as long as it is in range of the superchunk
 				if (x > -1 && x < CX * SCX && y > -1 && y < CY * SCY && z > -1 && z < CZ * SCZ && c->get((int)end.x, (int)end.y, (int)end.z) == 0)
 				{
 					c->set((int)end.x, (int)end.y, (int)end.z, selectedBlock);
 
 					//Sound
-					soundEngine.PlaySound (breaking);
+					soundEngine.PlaySound(placing);
 				}
 			}
 		}
@@ -971,6 +980,7 @@ namespace octet
 			glm::vec3 temp_s;
 			glm::vec3 temp_d;
 
+			//Strafes left in the direction of the camera
 			if (is_key_down('A')){
 				if (gravity == true)
 				{
@@ -985,6 +995,8 @@ namespace octet
 					position -= right_dir * (movespeed * 2.0f);
 				}
 			}
+
+			//Strafes right in the direction of the camera
 			if (is_key_down('D')){
 				
 				if (gravity == true)
@@ -1000,6 +1012,8 @@ namespace octet
 					position += right_dir * (movespeed * 2.0f);
 				}
 			}
+
+			//Moves forward in the direction of the camera
 			if (is_key_down('W')){
 				
 				if (gravity == true)
@@ -1015,6 +1029,8 @@ namespace octet
 					position += forward_dir * (movespeed * 2.0f) ;
 				}
 			}
+
+			//Moves backwards along the oposite direction of the camera
 			if (is_key_down('S')){
 				
 				if (gravity == true)
@@ -1030,6 +1046,8 @@ namespace octet
 					position -= forward_dir * (movespeed * 2.0f);
 				}
 			}
+
+			//Moves the camera up if in fly mode or jumps in player mode
 			if (is_key_down('Q'))
 			{
 				if (gravity == false){
@@ -1040,28 +1058,15 @@ namespace octet
 						jumpStr += 5.0f;
 				}
 			}
+
+			//Move the camera down
 			if (is_key_down('E')){
 				if (gravity == false){
 					position.y -= movespeed;
 				}
 			}
 
-			if (is_key_down('O'))
-			{
-				set_key('O', false);
-				if (c->get(0, 0, 0) == 3)
-				{
-					for (int i = 0; i < CZ; i++)
-						c->set(0, 0, i, 0);
-				}
-
-				else
-				{
-					for (int i = 0; i < CZ; i++)
-						c->set(0, 0, i, 3);
-				}
-			}
-
+			//Updates the currently selected block on the hotbar by using the mouse wheel
 			if (get_mouse_wheel() != 0)
 			{
 				if (get_mouse_wheel() < 0)
@@ -1084,6 +1089,7 @@ namespace octet
 				set_mouse_wheel(0);
 			}
 
+			//Used for updating the hot bar on the UI
 			if (is_key_down('1')) // grass
 			{
 				set_key('1', false);
@@ -1132,11 +1138,14 @@ namespace octet
 				ui.setPos(ui_current_block_background, current_block_position + ((float)(brick - 1) * 60.0f), (float)windowHeight - 75.0f);
 				selectedBlock = brick;
 			}
+
+			//Turns gravity on and off to go between a fly through camera and our actual game player
 			if (is_key_down(key_backspace)){
 				gravity = !gravity;
 				set_key(key_backspace, false);
 			}
 
+			//Turns wireframe on if space is held down
 			if (is_key_down(key_space))
 			{
 				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -1144,6 +1153,7 @@ namespace octet
 			else
 				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
+			//Sets the state to paused
 			if (is_key_down(key_esc))
 			{
 				playState = paused;
@@ -1152,6 +1162,7 @@ namespace octet
 				set_key(key_esc, false);
 			}
 
+			//Updates the camera position
 			glm::vec3 lookat;
 			lookat.x = sinf(angles.x) * cosf(angles.y);
 			lookat.y = sinf(angles.y);
