@@ -9,3 +9,4 @@ vc2010/layer2/Debug/vc100.pdb
 *.tlog
 *.lastbuildstate
 *.opensdf
+ipch/
