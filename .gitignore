@@ -5,7 +5,5 @@
 *.lastbuildstate
 *.opensdf
 ipch/
-debug/
-Debug/
 *.sdf
 *.suo
