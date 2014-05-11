@@ -1,0 +1,8 @@
+*.exe
+vc2010/layer2/Debug/layer2.log
+vc2010/layer2/Debug/layer2.pdb
+vc2010/layer2/Debug/main.obj
+vc2010/layer2/Debug/vc100.idb
+vc2010/layer2/Debug/vc100.pdb
+*.sdf
+*.suo

@@ -1,4 +1,5 @@
 namespace octet {
+	//Each of the elements used in the UI builder
 	class ui_element {
 		float x;
 		float y;
@@ -24,6 +25,7 @@ namespace octet {
 			enabled = true;
 		}
 
+		//Initialises the object if it gets passed a solid colour
 		void init(float x_, float y_, float w, float h, float ww, float wh, glm::vec4 c)
 		{
 			x = x_;
@@ -35,6 +37,8 @@ namespace octet {
 
       color = c;
 
+			//Scales the object to the screen (should of used orthogonal matrix)
+			//Currently its more like overlay panels on top of the screen
 			scale = glm::scale(glm::mat4(1.0), glm::vec3(width / windowW, height / windowH, 0));
 			float x_pos = -1.0f + ((x / (windowW*0.5f)) + (width / windowW));
 			float y_pos = 1.0f - ((y / (windowH*0.5f)) + (height / windowH));
@@ -69,6 +73,7 @@ namespace octet {
 			glBufferData(GL_ARRAY_BUFFER, 2 * 6 * sizeof(float), &tex_coords, GL_STATIC_DRAW);
 		}
 
+		//Initialises the object if it gets passed a texture
 		void init(float x_, float y_, float w, float h, float ww, float wh, GLuint t)
 		{
 			x = x_;
@@ -114,6 +119,7 @@ namespace octet {
 			glBufferData(GL_ARRAY_BUFFER, 2 * 6 * sizeof(float), &tex_coords, GL_STATIC_DRAW);
 		}
 
+		//Moves the object on the screen
     void setPos(float x_, float y_)
     {
       x = x_;
@@ -147,6 +153,7 @@ namespace octet {
 			texture = resource_dict::get_texture_handle(GL_RGBA, s.c_str());
 		}
 
+		//Renders the object
 		void render(ui_shader &shader)
 		{
 			glActiveTexture(GL_TEXTURE0);
