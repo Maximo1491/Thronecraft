@@ -2,17 +2,25 @@
 #include <alc.h>
 #include <stdio.h>
 
+//A sound class that will handle all the sounds and effects within Volumetric.
+//All sounds will be wav sounds.
 class Sound
 {
+	//Add music and sound buffers as needed here.
 	ALuint sound[2];
 	ALuint music[3];
 
+	//Keep track of the device and context used in the Sound engine.
+	//Keep track of the background gain in order to dynamically change it.
 	ALCdevice* device;
 	ALCcontext* context;
 	float backgroundGain;
 
+	//Track if the time is during the day or night.
 	bool dayPlaying;
 
+	//Setup structures to capture the sound data information from the wav files.
+	//RIFF data within the wav file.
 	struct RIFF_Header
 	{
 		char chunkID[4];
@@ -20,6 +28,7 @@ class Sound
 		char format[4];
 	};
 
+	//Wave format within the wav file.
 	struct WAVE_Format
 	{
 		char subChunkID[4];
@@ -32,6 +41,7 @@ class Sound
 		short bitsPerSample;
 	};
 
+	//Wave data within the wav file.
 	struct WAVE_Data
 	{
 		char subChunkID[4];
@@ -39,6 +49,10 @@ class Sound
 	};
 
 public:
+
+	//Constructor
+	//The constructor will initialize all the files including all the sound and music files.
+	//The sound device will be identified and saved as well as the sound context created.
 	Sound()
 	{
 		backgroundGain = 0.1f;
@@ -57,50 +71,65 @@ public:
 		music[2] = LoadWavFile ("../../assets/volumetric/audio/music/menu music1.wav", 0.1f, 1.0f, AL_TRUE);
 	}
 
+	//Destructor
 	~Sound()
 	{
 		CleanUpSoundEngine();
 	}
 
-	
+	//This function will play the sound effect whose index is passed.
 	void PlaySound (const int index)
 	{
 		alSourcePlay(sound[index]);
 	}
 
+	//This function shall start to play both the day and night music effects.
 	void PlayMusic()
 	{
 		alSourcePlay (music[0]);
 		alSourcePlay (music[1]);
 	}
 
+	//This function will stop playing both the day and night music effects.
 	void StopMusic()
 	{
 		alSourceStop (music[0]);
 		alSourceStop (music[1]);
 	}
 
+	//This function will play the music effect for the start menu.
 	void PlayMenuMusic()
 	{
 		alSourcePlay (music[2]);
 	}
 
+	//This function will stop playing the music effect for the start menu.
 	void StopMenuMusic()
 	{
 		alSourceStop (music[2]);
 	}
 
+	//This function will adjust the background gain of the day and night music files.
+	//The day and night music will fade in and out during the sunset and sunrise in the game.
+	//When the day and night are in full swing, the gain of the appropriate music will be 1.0f.
 	void AdjustBackground(const float &value)
 	{
+
+		//Check first to see if they background gain has changed at all.
 		if (backgroundGain != value)
 		{
+			//Change the background gain.
 			backgroundGain = value;
 
+			//Check to see if the background gain is below 0 or above 1.
+			//If so change the gain to 0 or 1 appropriately.
 			if (backgroundGain < 0.0f)
 				backgroundGain = 0.0f;
 			else if (backgroundGain > 1.0f)
 				backgroundGain = 1.0f;
 
+			//Check to see if the game is during the day.  If so, adjust the gain
+			//of the day music.  If not, adjust the gain of the night music.
 			if (dayPlaying)
 				alSourcef (music[0], AL_GAIN, backgroundGain);
 			else
@@ -108,11 +137,13 @@ public:
 		}
 	}
 
+	//This function will change the boolean keeping track of if day is playing.
 	void setDayPlaying (const bool value)
 	{
 		dayPlaying = value;
 	}
 
+	//This function will return the background gain setting.
 	float GetBackgroundGain ()
 	{
 		return backgroundGain;
@@ -120,6 +151,7 @@ public:
 
 private:
 
+	//This function will destroy the context used and stop using the sound device.
 	void CleanUpSoundEngine()
 	{
 		alcMakeContextCurrent(0);
