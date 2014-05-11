@@ -68,7 +68,7 @@ namespace octet
 
 			numTypes,
 		};
-
+		//The number of different block types in the game
 		glm::vec4 blockColors[numTypes];
 
 		enum{
@@ -90,7 +90,7 @@ namespace octet
 
 			num_ui_elements,
 		};
-
+		//All the UI elements for the main game
 		ui_builder ui;
 
 		enum{
@@ -102,7 +102,7 @@ namespace octet
 
 			num_ss_elements,
 		};
-
+		//All the start screen elements
 		ui_builder startScreen;
 
 		enum{
@@ -111,7 +111,7 @@ namespace octet
 
 			num_ls_elements,
 		};
-
+		//The load screen elements
 		ui_builder loadScreen;
 
 		enum{
@@ -124,7 +124,7 @@ namespace octet
 			ps_menu,
 			num_ps_elements,
 		};
-
+		//The pause screen elements
 		ui_builder pauseScreen;
 
 		enum{
@@ -135,9 +135,10 @@ namespace octet
 			playing,
 			paused,
 		};
-
+		//The game states
 		int playState;
 
+		//Used to generate the terrain
 		noise terrainNoise;
 
 		Volumetric(int argc, char **argv) : app(argc, argv){ }
@@ -163,9 +164,11 @@ namespace octet
 			//Get window width and height for UI elements
 			get_viewport_size(windowWidth, windowHeight);
 
+			//Used in the Mac version (currently doesnt work)
 			//windowWidth = glutGet(GLUT_WINDOW_WIDTH);
 			//windowHeight = glutGet(GLUT_WINDOW_HEIGHT);
 
+			//Initialises the colour values for the blocks (used in the UI)
 			blockColors[grass] = glm::vec4(0.160, 0.570, 0.168, 1);
 			blockColors[dirt] = glm::vec4(0.6, 0.3, 0, 1);
 			blockColors[stone] = glm::vec4(0.5, 0.5, 0.5, 1);
@@ -176,11 +179,13 @@ namespace octet
 			blockColors[brick] = glm::vec4(0.87, 0.16, 0.04, 1);
 			blockColors[water] = glm::vec4(0.137, 0.812, 0.933, 1);
 
-			//ui[loading_screen].init(0, 0, windowWidth, windowHeight, windowWidth, windowHeight, glm::vec4(1, 0, 0, 1));
+			//Sets the playstate
 			playState = start;
 
+			//Initialises the start screen
 			startScreen.init((float)windowWidth, (float)windowHeight, num_ss_elements);
 
+			//Adds all the start screen elements
 			GLuint texture = resource_dict::get_texture_handle(GL_RGBA, "assets/Volumetric/start/startScreen.gif");
 			startScreen.addElement(ss_background, 0.0f, 0.0f, (float)windowWidth, (float)windowHeight, texture);
 			texture = resource_dict::get_texture_handle(GL_RGBA, "assets/Volumetric/start/startNewButton.gif");
@@ -190,13 +195,17 @@ namespace octet
 			texture = resource_dict::get_texture_handle(GL_RGBA, "assets/Volumetric/start/startExitButton.gif");
 			startScreen.addElement(ss_exit, (windowWidth*0.5f) - 362.5f, (windowHeight*0.5f) + 83.0f + 50.0f, 725.0f, 100.0f, texture);
 
+			//Initialises the loading screen
 			loadScreen.init((float)windowWidth, (float)windowHeight, num_ls_elements);
 
+			//Adds the loading screen elements
 			texture = resource_dict::get_texture_handle(GL_RGBA, "assets/Volumetric/load/loadScreen.gif");
 			loadScreen.addElement(ls_background, 0.0f, 0.0f, (float)windowWidth, (float)windowHeight, texture);
 
+			//Initialises the pause screen
 			pauseScreen.init((float)windowWidth, (float)windowHeight, num_ps_elements);
 
+			//Adds the pause screen elements
 			pauseScreen.addElement(ps_background, (windowWidth*0.5f) - 400.0f, (windowHeight*0.5f) - 300.0f, 800.0f, (windowHeight*0.5f) + 300.0f - 41.0f, glm::vec4(0, 0, 0, 0.75f));
 			texture = resource_dict::get_texture_handle(GL_RGBA, "assets/Volumetric/pause/PauseNotice2.gif");
 			pauseScreen.addElement(ps_notice, (windowWidth*0.5f) - 175.0f, (windowHeight*0.5f) - 285.0f, 350.0f, 75.0f, texture);
@@ -209,6 +218,7 @@ namespace octet
 			texture = resource_dict::get_texture_handle(GL_RGBA, "assets/Volumetric/pause/PauseCancelButton2.gif");
 			pauseScreen.addElement(ps_cancel, (windowWidth*0.5f) - 100.0f, (windowHeight*0.5f) + 160.0f + 20.0f, 200.0f, 60.0f, texture);
 
+			//Initialises the game UI
 			ui.init((float)windowWidth, (float)windowHeight, num_ui_elements);
 
 			//CrossHair
@@ -286,6 +296,7 @@ namespace octet
 			fclose(file);
 		}
 
+		//Creates a tree at a specified position
 		void createTree1(int x_, int y_, int z_)
 		{
 			c->set(x_, y_ + 1, z_, wood);
@@ -299,6 +310,7 @@ namespace octet
 			c->set(x_, y_ + 5, z_, leaves);
 		}
 
+		//Creates a tree at a specified position
 		void createTree2(int x_, int y_, int z_)
 		{
 			c->set(x_, y_ + 1, z_, wood);
@@ -317,6 +329,7 @@ namespace octet
 			c->set(x_, y_ + 6, z_, leaves);
 		}
 
+		//Creates a tree at a specified position
 		void createTree3(int x_, int y_, int z_)
 		{
 			c->set(x_, y_ + 1, z_, wood);
@@ -347,6 +360,7 @@ namespace octet
 			c->set(x_, y_ + 6, z_, leaves);
 		}
 
+		//Creates a house at a specified position
 		void createBrickHouse(int x_, int y_, int z_)
 		{
 			c->set(x_ - 1, y_ + 1, z_ - 1, brick);
@@ -446,6 +460,7 @@ namespace octet
 			c->set(x_ - 4, y_ + 4, z_ - 6, brick);
 		}
 
+		//Creates a house at a specified position
 		void createWoodHouse(int x_, int y_, int z_)
 		{
 			c->set(x_ - 1, y_ + 1, z_ - 1, wood);
@@ -545,6 +560,7 @@ namespace octet
 			c->set(x_ - 4, y_ + 4, z_ - 6, wood);
 		}
 
+		//Creates a border around the free space found (used for debugging)
 		void createBuildingBorder(int x, int y, int z)
 		{
 			c->set(x - 5, y + 1, z - 7, brick);
@@ -577,17 +593,21 @@ namespace octet
 
 		void generateTerrain(int xPos, int zPos, int width, int depth)
 		{
-
+			//Goes along the x and z axis
 			for (int z = zPos; z < zPos + depth; z++)
 			{
 				for (int x = xPos; x < xPos + width; x++)
 				{
+					//Returns a value between -1 and 1 from the noise class
 					float total = terrainNoise.perlinNoise((float)x, (float)z);
 
+					//Sets the height of the current position
 					int y = (int)((total * 64.0f) + 64.0f); //Creates a height between 0-128
 
+					//For every voxel at the current location from the floor too the height create a voxel
 					for (int i = 0; i <= y; i++)
 					{
+						//Depending on how high the loop is currently decides what block to place
 						if (i == y && y >(CY * SCY) * 0.7)
 							c->set(x, i, z, snow);
 						else if (i > (CY * SCY) * 0.65)
@@ -604,10 +624,13 @@ namespace octet
 							c->set(x, i, z, stone);
 					}
 
+					//If the top of the voxel "tower" for the current position is grass then have a 1 in 300 chance of placing a tree at this position
 					if (y < (CY * SCY) * 0.65 && y >(CY * SCY) * 0.47 && rand() % 300 == 1)
 					{
+						//Checks to make sure the tree would not be placed outside of the super chunk
 						if (x > xPos + 2 && z > zPos + 2 && x < xPos + width - 2 && z < zPos + depth - 2)
 						{
+							//Randomly chooses which tree to make
 							switch (rand() % 3)
 							{
 							case 0:
@@ -623,9 +646,13 @@ namespace octet
 						}
 					}
 
+					//Tries to find a flat area
 					bool flat = true;
+
+					//If the current block is above water
 					if (x > xPos && z > zPos && x < xPos + width && z < zPos + depth && y >(CY * SCY) * 0.45)
 					{
+						//Checks to see if there is a flat space 8x6 wide before the current block
 						for (int i = x - 5; i <= x; i++)
 						{
 							for (int j = z - 7; j <= z; j++)
@@ -665,6 +692,8 @@ namespace octet
 						}
 					}
 
+					//If the height of the voxel "tower" for the current position is below 45% of the height then make every block after that upto 45%
+					//a water block and put sand below the water
 					if (y < (CY * SCY) * 0.45)
 					{
 						c->set(x, y - 1, z, sand);
