@@ -276,10 +276,13 @@ namespace octet
 
 		void SaveChunks()
 		{
+			//Open a file and prepare it for writing.  If the file exists this will overwrite the file.
 			FILE* file = fopen("../../assets/volumetric/saveFile.txt", "w");
 
+			//Save the dimensions of the superchunk within the save file.
 			fprintf(file, "%i %i %i\n", chunksX, chunksY, chunksZ);
 
+			//Sort through each of the chunks and save the voxel identification in the save file.
 			for (int x = 0; x < CX * chunksX; x++)
 			{
 				for (int y = 0; y < CY * chunksY; y++)
@@ -293,6 +296,7 @@ namespace octet
 				}
 			}
 
+			//We are done saving the game information.  Close the file.
 			fclose(file);
 		}
 
@@ -1418,30 +1422,39 @@ namespace octet
 			}
 			else if (playState == playing)
 			{
+				//Get the current time.
 				clock_t newTime = clock();
 
-				//Sound
+				//If the music for the game is not playing, start the music.
 				if (!musicPlaying)
 				{
 					musicPlaying = true;
 					soundEngine.PlayMusic();
 				}
-				//Sound End
 
+				//Update the sky timer with the delta time.  Use the sky timer to update the light_angle.
+				//Multiply the sky timer to speed up or slow down time.
 				skyTimer = (float)((double)newTime - (double)oldTime) / CLOCKS_PER_SEC;
 				light_angle += skyTimer * 3.0f;
 
+				//Set the past new time as the old time.
 				oldTime = newTime;
 
+				//If the lgiht angle is beyond 180 degrees, reset the angle by subtracting 360 degrees.
 				if (light_angle > 180.0f)
 					light_angle -= 360.0f;
 
-				//Sound
+				//Set the max volume of the sound effects.
+				//Get the absolute angle of the light source.
 				float maxVolume = 0.5f;
 				float abs_light_angle = abs (light_angle);
 
+				//Check to see if the light is currently at sunrise or sunset.  If so adjust the appropriate music level
+				//to fade in or out the day time music.
 				if ((light_angle < 10.0f && light_angle > 0.0f) || (light_angle > 170.0f && light_angle < 180.0f))
 				{
+					//Check to see if the time is during the night.  If so adjust the music gain to 0
+					//for the night music.  Set the day time check in the sound class to true and play the day music.
 					if (!dayTime)
 					{
 						soundEngine.AdjustBackground (0.0f);
@@ -1452,12 +1465,18 @@ namespace octet
 					if (abs_light_angle > 170.0f)
 						abs_light_angle = 180.0f - abs_light_angle;
 
+					//Use the absolute light angle divided by the number of degrees used to fade in/out
+					//the day music.  That percentage will be used to adjust the volume of the music.
 					float diff = (abs_light_angle / 10.0f) * maxVolume;
 					soundEngine.AdjustBackground (diff);
 				}
 
+				//Check to see if the light is currently at sunrise or sunset.  If so adjust the appropriate music level
+				//to face in or out during the night time music.
 				else if ((light_angle > -10.0f && light_angle < 0.0f)  || (light_angle < -170.0f && light_angle > -180.0f))
 				{
+					//Check to see if the time is during the day.  If so adjust the music gain to 0
+					//for the day music.  Set the day time check in the sound class to true and play the day music.
 					if (dayTime)
 					{
 						soundEngine.AdjustBackground (0.0f);
@@ -1465,24 +1484,22 @@ namespace octet
 						soundEngine.setDayPlaying (dayTime);
 					}
 
+					//Get light angle between 0 and 10 no matter if it is sunrise or sunset.
 					if (abs_light_angle > 170.0f)
 						abs_light_angle = 180.0f - abs_light_angle;
 
+					//Use the absolute light angle divided by the number of degrees used to fade in/out
+					//the night music.  That percentage will be used to adjust the volume of the music.
 					float diff = (abs_light_angle / 10.0f) * maxVolume;
 					soundEngine.AdjustBackground (diff);
 				}
 
+				//It isn't sunrise or sunset.  Set the music to full volume.
 				else
 					soundEngine.AdjustBackground (maxVolume);
-				//Sound End
 
+				//Adjust the sun's angle using the light angle calculated above.
 				light_information[0] = glm::vec4(cos(light_angle * 0.0174532925f) * 0.75f, sin(light_angle * 0.0174532925f), cos(light_angle * 0.0174532925f) * 0.25f, 0.0f);
-
-				glm::mat4 lightProjection = glm::ortho<float>(-10, 10, -10, 10, -10, 20);
-				glm::mat4 lightView = glm::lookAt(glm::vec3(light_information[0].x * 250.0f, light_information[0].y * 250.0f, light_information[0].z * 250.0f), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
-				glm::mat4 lightModel = glm::mat4(1.0f);
-
-				glm::mat4 lightMVP = lightProjection * lightView * lightModel;
 
 				//Draws our super chunk
 				c->render(model, view, projection, numOfLights, light_information, light_ambient, light_diffuse, flat_shader_, color_shader_);
@@ -1499,16 +1516,12 @@ namespace octet
 			}
 			else if (playState == paused)
 			{
+				//Get the current time and swap the old time for the new time.  This will pause the time in the game.
 				clock_t newTime = clock();
 				oldTime = newTime;
 
+				//Adjust the sun's light angle in order to keep track of the sun angle.  With the time paused this should remain constant.
 				light_information[0] = glm::vec4(cos(light_angle * 0.0174532925f) * 0.75f, sin(light_angle * 0.0174532925f), cos(light_angle * 0.0174532925f) * 0.25f, 0.0f);
-
-				glm::mat4 lightProjection = glm::ortho<float>(-10, 10, -10, 10, -10, 20);
-				glm::mat4 lightView = glm::lookAt(glm::vec3(light_information[0].x * 250.0f, light_information[0].y * 250.0f, light_information[0].z * 250.0f), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
-				glm::mat4 lightModel = glm::mat4(1.0f);
-
-				glm::mat4 lightMVP = lightProjection * lightView * lightModel;
 
 				//Draws our super chunk
 				c->render(model, view, projection, numOfLights, light_information, light_ambient, light_diffuse, flat_shader_, color_shader_);
