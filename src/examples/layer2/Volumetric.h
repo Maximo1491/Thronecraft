@@ -592,8 +592,10 @@ namespace octet
 							c->set(x, i, z, snow);
 						else if (i > (CY * SCY) * 0.65)
 							c->set(x, i, z, stone);
-						else if (i > (CY * SCY) * 0.47)
+						else if (i > (CY * SCY) * 0.48)
 							c->set(x, i, z, grass);
+						else if (i > (CY * SCY) * 0.47)
+							c->set(x, i, z, dirt);
 						else if (i > (CY * SCY) * 0.45)
 							c->set(x, i, z, sand);
 						else if (i > (CY * SCY) * 0.4)
