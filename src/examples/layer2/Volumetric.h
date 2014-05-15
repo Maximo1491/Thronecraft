@@ -974,7 +974,7 @@ namespace octet
 
 		void playing_keyboard_controls()
 		{
-			const float movespeed = 0.25f;
+			const float movespeed = 0.125f;
 			float jumpspeed = 1.1f;
 
 			glm::vec3 forward_dir = glm::vec3(sinf(angles.x), 0, cosf(angles.x));
